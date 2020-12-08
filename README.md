@@ -79,12 +79,12 @@
 
     Types:
 
-    - General purpose: Balanced CPU-to-memory ratio. Ideal for testing & development. Suit for small to medium databases and small to medium traffic web servers.
-    - Compute optimized: High CPU-to memory ratio. Good for medium traffic web servers, network appliances, batch processes, and application servers.
-    - Memory optimized: High memory-to-CPU. Great for relational database server, medium to large caches, and in-memory analytics.
-    - Storage optimized: High disk throughput and IO. Ideas for Big Data, SQL, NoSQL database, data warehousing and large transactional databases.
-    - GPU: Optimized for graphic rendering, machine learning.
-    - High performance compute: designed for HPC workloads.
+    - **General purpose**: Balanced CPU-to-memory ratio. Ideal for testing & development. Suit for small to medium databases and small to medium traffic web servers.
+    - **Compute optimized**: High CPU-to memory ratio. Good for medium traffic web servers, network appliances, batch processes, and application servers.
+    - **Memory optimized**: High memory-to-CPU. Great for relational database server, medium to large caches, and in-memory analytics.
+    - **Storage optimized**: High disk throughput and IO. Ideas for Big Data, SQL, NoSQL database, data warehousing and large transactional databases.
+    - **GPU**: Optimized for graphic rendering, machine learning.
+    - **High performance compute**: designed for HPC workloads.
 
     Be careful about resizing production VMs - they will be rebooted automatically which can cause a temporary outage and change some configuration settings such as the IP address.
 
@@ -112,35 +112,51 @@
 #### Configure VM for remote access
 
 ***
+TODO
 
 #### Manage the availability of your Azure VMs
 
 ***
+TODO
 
 #### VMs data backup and recovery
 
 ***
+TODO
 
 #### Azure Resource Manager templates
 
 ***
 
+TODO
+
 ### Create Azure App Service Web Apps
 
 ***
+TODO
 
 ### Implement Azure Function
 
 ***
+TODO
 
 ## Develop Azure Storage (10-15%)
 
 ***
+TODO
 
 ## Implement Azure Security (15-20%)
 
+TODO
+
 ## Monitor, troubleshoot, and optimize Azure solutions (10-15%)
+
+TODO
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
+TODO
+
 ## Additional Tips and Resources
+
+TODO
