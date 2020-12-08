@@ -109,6 +109,28 @@
     - Compute expenses are billed on a per-minute basis when a VM is up. The cost includes OS license cost. Linux-based VMs are cheaper because there is no license charge.
     - Storage costs are billed even when a VM is stop or deallocated.
 
+3. Basic commands to provision a VM
+
+    - Create a new VM:
+
+      ```powershell
+      New-AzVm `
+          -ResourceGroupName "myResourceGroupVM" `
+          -Name "myVM" `
+          -Location "EastUS" `
+          -VirtualNetworkName "myVnet" `
+          -SubnetName "mySubnet" `
+          -SecurityGroupName "myNetworkSecurityGroup" `
+          -PublicIpAddressName "myPublicIpAddress" `
+      ```
+
+    - Get Public Ip Address
+
+      ```powershell
+      Get-AzPublicIpAddress `
+        -ResourceGroupName "myResourceGroupVM"  | Select IpAddress
+      ```
+
 #### Configure VM for remote access
 
 ***
@@ -142,7 +164,6 @@ TODO
 
 ## Develop Azure Storage (10-15%)
 
-***
 TODO
 
 ## Implement Azure Security (15-20%)
