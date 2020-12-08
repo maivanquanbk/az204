@@ -18,8 +18,6 @@
 
 ## Develop Azure compute solution (25-30%)
 
-***
-
 ### Implement IaaS Solutions
 
 ***
@@ -141,16 +139,8 @@
 
 ## Implement Azure Security (15-20%)
 
-***
-
 ## Monitor, troubleshoot, and optimize Azure solutions (10-15%)
-
-***
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
-***
-
 ## Additional Tips and Resources
-
-***
