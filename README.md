@@ -134,7 +134,24 @@
 #### Configure VM for remote access
 
 ***
-TODO
+
+1. Configure remote access to Linux VM
+
+    There are two approaches we can use to authenticate an SSH connection: username and password, or an SSH key pair.
+    - Using username and password to access VM leaves the VM vulnerable to brute-force attacks of passwords. The more secured method is using public-private key pair.
+    - But if we need to be able to access the Linux VM from a variety of locations, a username and password combination might be a better approach.
+
+    To connect to the VM via SSH key pair, we need:
+    - the public IP address of the VM (*Note*: it could be static or dynamic)
+    - the username of the local account on the VM
+    - a public key configured in that account
+    - access to the corresponding private key
+    - port 22 open on the VM
+
+2. Configure remote access to Windown VM
+
+3. Enable just-in-time (JIT) access to VM
+
 
 #### Manage the availability of your Azure VMs
 
