@@ -161,7 +161,7 @@
     By using JIT, we do not need to set rules for NSG or Firewall to access VM that apparently lets some ports be being opened all the time.
 
     How to enable JIT for VM access:
-    1. Enable Azure Defender service in Security Center.
+    1. Enable [Azure Defender for servers](https://docs.microsoft.com/en-us/azure/security-center/defender-for-servers-introduction) on the subscription in Security Center.
     2. Ensure all rules which are used for VM access such as 22 (SSH) and 3389 (RDP) are removed from NSG and Firewall. Otherwise, they will bypass JIT rules and let the ports are opened.
     3. Enable JIT for the VM in specific ports with Azure Portal or Azure Powershell. By that, Security Center will add a rule "deny all inbound traffic" to the selected ports in NSG and Firewall.
 
