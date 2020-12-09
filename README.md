@@ -150,6 +150,10 @@
 
 2. Configure remote access to Windown VM
 
+    To connect to an Azure VM with an RDP client, you will need:
+    - The public IP address of the VM (or private if the VM is configured to connect to your network).
+    - Port 3389 open on the VM.
+
 3. Enable just-in-time (JIT) access to VM
 
 
