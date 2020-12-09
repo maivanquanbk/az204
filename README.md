@@ -46,7 +46,7 @@
     - A VM must have at least one NIC but can have more than one. Each NIC attached to a VM must exist in the same location and subscription of the VM.
     - Can change the subnet VM connected to but cannot change the VNet.
 
-    **Terminologies**: Virtual network (VNets), Subnet, Network security group (NGS), Network Interface (NIC), Network address translation ([NAT](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-outbound-connections)), Private & Public IP.
+    **Terminologies**: Virtual network (VNets), Subnet, Network security group (NSG), Network Interface (NIC), Network address translation ([NAT](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-outbound-connections)), Private & Public IP.
 
     **More information**: [here](https://docs.microsoft.com/en-us/azure/virtual-machines/network-overview?toc=/azure/virtual-machines/windows/toc.json&bc=/azure/virtual-machines/windows/breadcrumb/toc.json)
 
@@ -148,7 +148,7 @@
     - access to the corresponding private key
     - port 22 open on the VM
 
-2. Configure remote access to Windown VM
+2. Configure remote access to Window VM
 
     To connect to an Azure VM with an RDP client, we will need:
     - The public IP address of the VM (or private if the VM is configured to connect to your network).
@@ -156,6 +156,21 @@
 
 3. Enable just-in-time (JIT) access to VM
 
+    JIT is a feature of Azure Defender. It blocks down inbound traffic to a specific port such as 22 (SSH) and 3389 (RDP), etc to reduce the attach surface of a VM. Nevertheless, it still provides the access to legitimate users when needed.
+
+    By using JIT, we do not need to set rules for NSG or Firewall to access VM that apparently lets some ports be being opened all the time.
+
+    How to enable JIT for VM access:
+    1. Enable Azure Defender service in Security Center.
+    2. Ensure all rules which are used for VM access such as 22 (SSH) and 3389 (RDP) are removed from NSG and Firewall. Otherwise, they will bypass JIT rules and let the ports are opened.
+    3. Enable JIT for the VM in specific ports with Azure Portal or Azure Powershell. By that, Security Center will add a rule "deny all inbound traffic" to the selected ports in NSG and Firewall.
+
+    How does a user get access to the VM which has JIT applied:
+    1. When a user request access to a VM, Security Center checks that the user has RBAC permissions for that AM.
+    2. Security Center then configures NSG and Firewall to allow inbound traffic to the port and from the relevant IP (or range), for an amount of time.
+    3. After the time has expired, Security Center restores NSG and Firewall to the previous state. **Connections that are already established are not interrupted**.
+
+    All setup steps could be found [here](https://docs.microsoft.com/en-us/azure/security-center/security-center-just-in-time?tabs=jit-config-asc%2Cjit-request-asc)
 
 #### Manage the availability of your Azure VMs
 
