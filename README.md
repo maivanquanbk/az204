@@ -166,7 +166,7 @@
     3. Enable JIT for the VM in specific ports with Azure Portal or Azure Powershell. By that, Security Center will add a rule "deny all inbound traffic" to the selected ports in NSG and Firewall.
 
     How does a user get access to the VM which has JIT applied:
-    1. When a user request access to a VM, Security Center checks that the user has RBAC permissions for that AM.
+    1. When a user request access to a VM, Security Center checks that the user has RBAC permissions for that VM.
     2. Security Center then configures NSG and Firewall to allow inbound traffic to the port and from the relevant IP (or range), for an amount of time.
     3. After the time has expired, Security Center restores NSG and Firewall to the previous state. **Connections that are already established are not interrupted**.
 
