@@ -160,7 +160,18 @@
 #### Manage the availability of your Azure VMs
 
 ***
-TODO
+
+VMs are about to down and reboot because of serveral reasons: physical servers are down or outage, software and hardward update.
+
+If this happens, Azure will move the VM to a healthy host server automatically. However, this self-healing migration could take several minutes, during which, the application(s) hosted on that VM will not be available.
+
+**Fault domain**: a logical group of hardware in Azure that shares a common power source and network switch.
+
+**Update domain**: a logical group of hardware that can undergo maintenance or be rebooted at the same time.
+
+**Avalability set**: a logical group of VMs so that they aren't all subject to a single point of failure and not all upgraded at the same time during a host operating system upgrade in the datacenter. VMs in an avaiabilty set should also have the same funtionalities and have the same software installed.
+
+Avalability set guarantees to spread VMs across Fault Domains and Update Domains.
 
 #### VMs data backup and recovery
 
