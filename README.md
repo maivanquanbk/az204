@@ -191,7 +191,10 @@ Avalability set guarantees to spread VMs across Fault Domains and Update Domains
 #### VMs data backup and recovery
 
 ***
-TODO
+
+Azure Backup is a backup as a service offering that protects physical or virtual machines no matter where they reside: on-premises or in the cloud.
+
+Azure Backup is native support for Azure Virtual Machines, both Windows, and Linux.
 
 #### Azure Resource Manager templates
 
