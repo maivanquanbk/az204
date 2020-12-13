@@ -200,7 +200,9 @@ Azure Backup is native support for Azure Virtual Machines, both Windows, and Lin
 
 ***
 
-TODO
+Resource Manager templates are JSON files that define the resources you need to deploy for your solution. ARM template features include **declarative syntax** and **repeatable results**.
+
+**Azure VM extensions** are small applications that allow you to configure and automate tasks on Azure VMs after initial deployment. You bundle extensions with a new VM deployment or run them against an existing system.
 
 ### Create Azure App Service Web Apps
 
