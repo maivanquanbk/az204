@@ -204,6 +204,80 @@ Resource Manager templates are JSON files that define the resources you need to 
 
 **Azure VM extensions** are small applications that allow you to configure and automate tasks on Azure VMs after initial deployment. You bundle extensions with a new VM deployment or run them against an existing system.
 
+#### Create, publish and deploy container images for solutions
+
+***
+
+1. Terms
+
+    - **Azure Container Registry**: is a managed, private Docker registry service based on the open-source Docker Registry 2.0. Create and maintain Azure container registries to store and manage your private Docker container images and related artifacts.
+
+    - **Azure Container Regisitry Tasks**: Build and push a single container image to a container registry on-demand, in Azure, without needing a local Docker Engine installation. Think `docker build`, `docker push` in the cloud.
+
+    - **Azure Container Instances**: offers the fastest and simplest way to run a container in Azure, without having to manage any virtual machines and without having to adopt a higher-level service.
+
+2. Create and publish image locally
+
+    Create new image:
+
+    ``` bash
+    docker build <path_to_Dockerfile> <name_of_image>
+    ```
+
+    Login in Azure Container Registry:
+
+    ``` bash
+    # Azure CLI
+    az acr login --name <acr_name>
+    ```
+
+    Before publising the image, we need to tag it:
+
+     - Query Login Server of the ACR:
+
+    ``` bash
+    # Azure CLI
+    az acr show --name <acr_name> --query loginServer --output table
+
+    # Output
+    Result
+    ------------------------
+    <acr_name>.azurecr.io
+    ```
+
+    - Tag the image with prefix is the login server:
+
+    ``` bash
+    docker tag <name_of_image> <loginServer>/<name_of_image>:version
+
+    # Example
+    docker tag myimage myacr.azurecr.io/myimage:v1
+    ```
+
+    Publish the image to Azure Container Registry:
+
+    ``` bash
+    docker push <loginServer>/<name_of_image>:version 
+    ```
+
+    You then can list images in Azure Container Registry:
+
+    ``` bash
+    # Azure CLI
+    az acr repository list --name <acrName> --output table
+
+    # Output
+    Result
+    ----------------
+    myimage 
+    ```
+
+    To see the tags for a specific image:
+
+    ``` bash
+    az acr repository show-tags --name <acrName> --repository <name_of_image> --output table
+    ```
+
 ### Create Azure App Service Web Apps
 
 ***
