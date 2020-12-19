@@ -414,6 +414,12 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     - You can also view **Metrics** for your app. You can view CPU, memory, network, and file system usage, and set up alerts when a counter hits a particular threshold.
 
+5. Move an app to another App Service Plan
+    - We can move an app to another AppService Plan as long as that plan is in the same resource group and the same geographical region with the current plan.
+
+    > For more information, Azure deploys each App Service Plan to a deployment unit, called a **webspace**. Each region can have many webspaces, but your app can only move between plans that are created in the same webspace. All plans created with the same resource group and region combination are deployed into the same webspace.
+
+    > If you're moving an app from a higher-tiered plan to a lower-tiered plan, such as from D1 to F1, the app may lose certain capabilities in the target plan. For example, if your app uses TLS/SSL certificates.
 
 ### Implement Azure Function
 
