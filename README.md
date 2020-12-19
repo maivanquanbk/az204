@@ -8,6 +8,7 @@
       - [Manage the availability of your Azure VMs](#manage-the-availability-of-your-azure-vms)
       - [VMs data backup and recovery](#vms-data-backup-and-recovery)
       - [Azure Resource Manager templates](#azure-resource-manager-templates)
+      - [Create, publish and deploy container images for solutions](#create-publish-and-deploy-container-images-for-solutions)
     - [Create Azure App Service Web Apps](#create-azure-app-service-web-apps)
     - [Implement Azure Function](#implement-azure-function)
   - [Develop Azure Storage (10-15%)](#develop-azure-storage-10-15)
@@ -231,7 +232,7 @@ Resource Manager templates are JSON files that define the resources you need to 
     az acr login --name <acr_name>
     ```
 
-    Before publising the image, we need to tag it:
+    Before publishing the image, we need to tag it:
 
      - Query Login Server of the ACR:
 
@@ -248,7 +249,7 @@ Resource Manager templates are JSON files that define the resources you need to 
     - Tag the image with prefix is the login server:
 
     ``` bash
-    docker tag <name_of_image> <loginServer>/<name_of_image>:version
+    docker tag <name_of_image> <loginServer>/<name_of_image>:<version>
 
     # Example
     docker tag myimage myacr.azurecr.io/myimage:v1
@@ -257,14 +258,14 @@ Resource Manager templates are JSON files that define the resources you need to 
     Publish the image to Azure Container Registry:
 
     ``` bash
-    docker push <loginServer>/<name_of_image>:version 
+    docker push <loginServer>/<name_of_image>:<version> 
     ```
 
     You then can list images in Azure Container Registry:
 
     ``` bash
     # Azure CLI
-    az acr repository list --name <acrName> --output table
+    az acr repository list --name <acr_name> --output table
 
     # Output
     Result
@@ -275,7 +276,64 @@ Resource Manager templates are JSON files that define the resources you need to 
     To see the tags for a specific image:
 
     ``` bash
-    az acr repository show-tags --name <acrName> --repository <name_of_image> --output table
+    az acr repository show-tags --name <acr_name> --repository <name_of_image> --output table
+    ```
+
+3. Create and publish container image with ACR Tasks
+
+    ACR Tasks will build our image in Azure and then publish it to ACR for us with one command:
+
+    ``` bash
+    # Azure CLI
+    az acr build --registry <acr_name> --image <name_of_image>:<version> <path_to_Dockerfile>
+    ```
+
+4. Deploy image to Azure Container Instance
+
+    Configure registry authentication with service principal:
+
+    ``` bash
+    ACR_NAME=<acr_name>
+
+    # SERVICE_PRINCIPAL_NAME: Must be unique within AD tenant
+    SERVICE_PRINCIPAL_NAME=<acr_name>-service-principal
+
+    # Obtain the full registry ID
+    ACR_REGISTRY_ID=$(az acr show --name $ACR_NAME --query id --output tsv)
+
+    # Create the service principal with rights scoped to the registry.
+    # Default permissions are for docker pull access. Modify the '--role'
+    # argument value as desired:
+    # acrpull:     pull only
+    # acrpush:     push and pull
+    # owner:       push, pull, and assign roles
+    SP_PASSWD=$(az ad sp create-for-rbac --name http://$SERVICE_PRINCIPAL_NAME --scopes $ACR_REGISTRY_ID --role acrpull --query password --output tsv)
+
+    SP_APP_ID=$(az ad sp show --id http://$SERVICE_PRINCIPAL_NAME --query appId --output tsv)
+    ```
+
+    Deploy image:
+
+    ``` bash
+    az container create `
+      --resource-group <myResourceGroup> `
+      --name <container_name> `
+      --image <loginServer>/<name_of_image>:<version> `
+      -- cpu 1 --memory 1 `
+      --registry-login-server <loginServer> `
+      --registry-username $SP_APP_ID `
+      --registry--password $SP_PASSWD `
+      --dns-name-label <dns_name> `
+      --ports 80
+    ```
+
+    Verify deployment progress:
+
+    ``` bash
+    az container show `
+      --resource-group <myResourceGroup> `
+      --name <container_name> `
+      --query instanceView.state
     ```
 
 ### Create Azure App Service Web Apps
