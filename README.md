@@ -507,7 +507,7 @@ Resource Manager templates are JSON files that define the resources you need to 
 1. Select the appropriate API for your solution
 
     | | Core (SQL) | MongoDB | Cassandra  | Azure Table | Gremlin |
-    | --- | :---: | :---: | :---: | :---: | :---: | :---: |
+    | --- | :---: | :---: | :---: | :---: | :---: |
     | New project being created from scratch | x | | | | |
     | Existing MongoDB, Cassandra, Azure Table, or Gremlin data | | x | x | x | x |
     | Analysis of the relationships between data | | | | | x |
