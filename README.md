@@ -12,6 +12,7 @@
     - [Create Azure App Service Web Apps](#create-azure-app-service-web-apps)
     - [Implement Azure Function](#implement-azure-function)
   - [Develop Azure Storage (10-15%)](#develop-azure-storage-10-15)
+    - [Develop solutions that use Cosmos DB storage](#develop-solutions-that-use-cosmos-db-storage)
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
@@ -444,7 +445,7 @@ Resource Manager templates are JSON files that define the resources you need to 
 
         - Using retry support on top of trigger resilience. For instance, if you used the default Service Bus delivery count of 10, and defined a function retry policy of 5. If the excution of one message failed, the function will retry 5 times before it requeues the message from Queue, and increments the delivery count to 2.
 
-3. Durrable Function
+3. Durable Function
 
     Durable Functions is an extension of Azure Functions that lets you write stateful functions in a serverless compute environment.
 
@@ -492,14 +493,100 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     - Aggregator (stateful entities):
 
-        In this pattern, the data being aggregated may come from multiple sources, may be delivered in batches, or may be scattered over long-periods of time. The aggregator might need to take action on event data as it arrives, and external clients may need to query the aggregated data.
+        **In** this pattern, the data being aggregated may come from multiple sources, may be delivered in batches, or may be scattered over long-periods of time. The aggregator might need to take action on event data as it arrives, and external clients may need to query the aggregated data.
 
         ![image](https://docs.microsoft.com/en-us/azure/azure-functions/durable/media/durable-functions-concepts/aggregator.png)
 
 
 ## Develop Azure Storage (10-15%)
 
-TODO
+### Develop solutions that use Cosmos DB storage
+
+***
+
+1. Select the appropriate API for your solution
+
+    | | Core (SQL) | MongoDB | Cassandra  | Azure Table | Gremlin |
+    | --- | :---: | :---: | :---: | :---: | :---: | :---: |
+    | New project being created from scratch | x | | | | |
+    | Existing MongoDB, Cassandra, Azure Table, or Gremlin data | | x | x | x | x |
+    | Analysis of the relationships between data | | | | | x |
+    | All other scenarios | x | | | | |
+
+    **Ask the question**: Are there existing databases or applications that use any of the supported APIs?
+
+    - If there is, then you might want to consider using the current API with Azure Cosmos DB, as that choice will reduce your migration tasks, and make the best use of previous experience in your team.
+
+    - If there isn't, then there are a few questions that you can ask in order to help you define the scenario where the database is going to be used:
+
+        - Does the schema change a lot?
+
+            A traditional document database is a good fit in these scenarios, making Core (SQL) a good choice.
+
+        - Is there important data about the relationships between items in the database?
+
+            Relationships that require metadata to be stored for them are best represented in a graph database.
+
+        - Does the data consist of simple key-value pairs?
+
+            Before Azure Cosmos DB existed, Redis or the Table API might have been a good fit for this kind of data; however, Core (SQL) API is now the better choice, as it offers a richer query experience, with improved indexing over the Table API.
+
+2. Implement partitioning schemes
+
+    Azure Cosmos DB uses partitioning to horizontal scale individual containers in a database to meet the performance needs of an application.
+
+    **Logical partitions**:
+    - A logical partition consists of a set of items that have the same partition key.
+    - A logical partition also defines the scope of database transactions.
+    - Each logical partition can store up to 20GB of data.
+
+    **Physical partitions**:
+    - Internally, one or more logical partitions are mapped to a single physical partition.
+    - The number of physical partitions in a container depends on the following configuration:
+        - The number of throughput provisioned (each individual physical partition can provide a throughput of up to 10,000 request units per second).
+        - The total data storage (each individual physical partition can store up to 50GB data).
+    - Throughput provisioned for a container is divided evenly among physical partitions. A partition key design that doesn't distribute requests evenly might result in too many requests directed to a small subset of partitions that become "hot".
+
+    **Replica sets**:
+    - Each physical partition consists of a set of replicas, also referred to as a replica set. A replica set makes the data stored within the physical partition durable, highly available, and consistent.
+    - A single physical partition have at least **4** replicas.
+
+    **Choosing a partition key**: Selecting a partition key in a container is a simple but important design decision. Once we select the partition key, it cannot be changed later. If we must to change it, we will have to move all the data to a new container with the new desire partition key. For all container, a partition key should:
+
+    - Be a property that has value which does not change. If a property is set as partition key, we cannot update its value.
+    - The property should have a wide range of possible values.
+    - Appear frequently in the predicate clause of queries.
+    - Spread request unit (RU) consumption and data storage evenly across all logical partitions.
+
+3. Set the appropriate consistency level for operations
+
+    Distributed databases that rely on replication for high availability, low latency, or both, must make a fundamental tradeoff between the read consistency, availability, latency, and throughput.
+
+    Azure Cosmos DB offers five well-defined levels. From strongest to weakest, the levels are:
+    - **Strong**: Users are always guaranteed to read the latest committed write.
+    - **Bounded staleness**: 
+      - The reads might return stale data by at most "K" versions (that is, "updates") of an item or by "T" time interval, whichever is reached first.
+      - It still honors the consistent-prefix guarantee.
+      - We can trade consistency for availability, latency and throughput or vice versa by adjusting the "K" or "T" variable.
+    - **Session**: Within a single client session reads are guaranteed to honor the consistent-prefix, monotonic reads, monotonic writes, read-your-writes, and write-follows-reads guarantees.
+    - **Consistent prefix**: Consistent prefix consistency level guarantees that reads never see out-of-order writes.
+    - **Eventual**: There's no ordering guarantee for reads. In the absence of any further writes, the replicas eventually converge.
+
+    Each level provides availability and performance tradeoffs. The following image shows the different consistency levels as a spectrum:
+
+    ![image](https://docs.microsoft.com/en-us/azure/cosmos-db/media/consistency-levels/five-consistency-levels.png)
+
+    > **Note**
+    >
+    > There are no write latency benefits on using strong consistency with multiple write regions because a write to any region must be replicated and committed to all configured regions within the account. This results in the same write latency as a single write region account.
+
+4. Implement server-side programming including stored procedures, triggers, and change feed notifications
+
+    **Stored procedure**: is a piece of application logic written in JavaScript that is registered and executed against a collection as a single transaction.
+
+    **Trigger**: is a piece of application logic that can be executed before (pre-triggers) and after (post-triggers) creation, deletion, and replacement of a document. Triggers are written in JavaScript.
+
+    **Change feed**: we can use it for sort of de-normalization and duplicating data to a different container with different partition key for optimizing query. 
 
 ## Implement Azure Security (15-20%)
 
