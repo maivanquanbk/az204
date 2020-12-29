@@ -13,6 +13,7 @@
     - [Implement Azure Function](#implement-azure-function)
   - [Develop Azure Storage (10-15%)](#develop-azure-storage-10-15)
     - [Develop solutions that use Cosmos DB storage](#develop-solutions-that-use-cosmos-db-storage)
+    - [Develop solutions that use blob storage](#develop-solutions-that-use-blob-storage)
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
@@ -587,6 +588,75 @@ Resource Manager templates are JSON files that define the resources you need to 
     **Trigger**: is a piece of application logic that can be executed before (pre-triggers) and after (post-triggers) creation, deletion, and replacement of a document. Triggers are written in JavaScript.
 
     **Change feed**: we can use it for sort of de-normalization and duplicating data to a different container with different partition key for optimizing query. 
+
+### Develop solutions that use blob storage
+
+***
+
+1. Choose a tool and strategy for copying blobs
+
+    **Azure CLI**:
+    - Using `az storage blob copy command`.
+    - This command runs asynchronously and uses the Azure Storage service to manage the copy process.
+    - This means we don't have to download and upload blobs via local storage to migrate them between accounts.
+    - We can put ETag and date condition option to specify which blobs will be copied from the source such as `--source-if-match`, `--source-if-modified-since`, etc or which blobs will be overwrite at the destination such as `--destination-if-match`, `--destination-if-modified-since`, etc.
+    - **UseCase**: You want to quickly upload the data in a collection of small files held in a local folder to blob storage. This is a one-off request. You don't want to overwrite blobs that have been modified in the last two days.
+
+    **AZCopy**:
+    - The AzCopy utility was written specifically for transferring data into, out of, and between Azure Storage accounts.
+    - A key strength of AzCopy over the Azure CLI is that they're recoverable. The AzCopy command tracks the progress of copy operations, and if an operation fails, it can be restarted close to the point of failure.
+    - The AzCopy command lacks the ability to select blobs based on their modification dates.
+    - AzCopy does provide comprehensive support for hierarchical containers and blob selection by pattern matching (two features not available with the Azure CLI).
+    - **UseCase**: You want to transfer a series of large files to blob storage. It may take several hours to upload each file, and you're concerned that if a transfer fails it shouldn't have to restart from the beginning
+
+    **.NET Storage Client library**:
+    - The .NET Storage Client library requires a development investment, and may not be suitable for quick, one-off jobs.
+    - If we have a complex task that is repeated often, and needs certain of customization and flexibility, then this investment could be worthwhile.
+    - **UseCase**: You want to move a set of blobs in Azure storage from one storage account to another. You want to organize the blobs in the destination account in different folders, according to the month in which each blob was last updated. You'll be performing this task at regular intervals.
+
+2. Manage container properties and metadata with .NET
+
+    **About properties and metadata**:
+
+    - **System properties**: System properties exist on each Blob storage resource. Some of them can be read or set, while others are read-only.
+    - **User-defined metadata**: User-defined metadata consists of one or more name-value pairs that you specify for a Blob storage resource.
+
+    **Retrieve container properties**:
+    - GetProperties
+    - GetPropertiesAsync
+
+    **Set metadata**: You can specify metadata as one or more name-value pairs on a blob or container resource. To set metadata, add name-value pairs to an IDictionary object, and then call one of the following methods to write the values:
+
+    - SetMetadata
+    - SetMetadataAsync
+
+3. Implement data archiving and retention
+
+    **Store business-critical blob data with immutable storage**:
+    - For the duration of the retention interval, blobs can be created and read, but cannot be modified or deleted.
+    - Time-based retention policy support: Users can set policies to store data for a specified interval. After the retention period has expired, blobs can be deleted but not overwritten.
+    - Legal hold policy support: If the retention interval is not known, users can set legal holds to store immutable data until the legal hold is cleared.
+    - Container and storage account deletion are also not permitted if there are any blobs in a container that are protected by a legal hold or a locked time-based policy.
+    - Locked time-based policies will protect against container deletion only if at least one blob exists within the container.
+
+    **Access tiers for Azure Blob Storage - hot, cool, and archive**:
+    - **Hot** - Optimized for storing data that is accessed frequently.
+    - **Cool** - Optimized for storing data that is infrequently accessed and stored for at least 30 days. It can be used for Short-term backup and disaster recovery datasets. It still provides a need to be available immediately when accessed but the cost will higher than **Hot** tier.
+    - **Archive** - Optimized for storing data that is rarely accessed and stored for at least 180 days with flexible latency requirements (on the order of hours). It can be used for Long-term backup, secondary backup, and archival datasets
+
+    - Notes:
+        - Only the hot and cool access tiers can be set at the account level. The archive access tier isn't available at the account level.
+        - Hot, cool, and archive tiers can be set at the blob level during upload or after upload.
+        - While a blob is in archive storage, the blob data is offline and can't be read, overwritten, or modified. To read or download a blob in archive, we must first rehydrate it to an online tier.
+
+    **Rehydrate blob data from the archive tier**:
+    - There are two options to retrieve and access data stored in the archive access tier.
+        - Rehydrate an archived blob to an online tier - Rehydrate an archive blob to hot or cool by changing its tier using the Set Blob Tier operation.
+        - Copy an archived blob to an online tier - Create a new copy of an archive blob by using the Copy Blob operation. Specify a different blob name and a destination tier of hot or cool.
+
+    - The process of rehydration can take hours to complete which depends on rehydrate priority:
+        - Standard priority: The rehydration request will be processed in the order it was received and may take up to 15 hours.
+        - High priority: The rehydration request will be prioritized over Standard requests and may finish in under 1 hour for objects under ten GB in size.
 
 ## Implement Azure Security (15-20%)
 
