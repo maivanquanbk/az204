@@ -17,6 +17,7 @@
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
+    - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
     - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
   - [Additional Tips and Resources](#additional-tips-and-resources)
 
@@ -669,6 +670,119 @@ TODO
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
+### Implement solutions that use Azure Queue
+
+***
+
+1. Concepts, terminology and limitations
+
+    **Azure Queue Service**:
+    - is a simple queue service which can contains millions of messages up-to the total capacity limit of a storage account. A single message is up-to **64 KiB** in size.
+    - We can access to the **Azure Queue Service** via HTTP/HTTPS or using client libraries.
+
+    **ULR format**: Queues are addressable using the following URL format: ``http://<storage account>.queue.core.windows.net/<queue>``.
+
+    **Message**: A message, in any format, of up to 64 KB. Before version 2017-07-29, the maximum time-to-live allowed is seven days. For version 2017-07-29 or later, the maximum time-to-live can be any positive number, or -1 indicating that the message doesn't expire. **If this parameter is omitted, the default time-to-live is seven days.**
+
+    **Scale targets for Queue Storage**:
+
+    | Resource | Target |
+    | :---     | :---  |
+    | Maximum size of a single queue | 500 TiB |
+    | Maximum storage account capacity | 5 PiB |
+    | Maximum size of a message in queue | 64 KiB |
+    | Maximum request rate per storage account | 20,000 messages per second, which assumes a 1-KiB message size |
+    | Target throughput for a single queue (1-KiB message size) | Up to 2,000 messages per second |
+
+2. .NET library code samples: More could be found [here](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Queues/samples).
+
+    > **Important**
+    >
+    > - The current library only supports ``Peek`` and ``Receive`` message in batch.
+    > - Other operations: ``Send``, ``Update``, ``Delete`` are applied for a single message.
+    > - Visibility timeout cannot be larger than 7 days.
+    > - To use Queue Trigger for Azure Function, we **MUST** encode the message to **Base64String** before sending it to Azure Queue Storage.
+
+    - Create a queue client to connect to Azure Queue Service.
+
+    ``` CSharp
+    using Azure.Storage.Queues;
+
+    QueueClient queueClient = new QueueClient(connectionString, queueName);
+    ```
+
+    - Create a queue if not exists.
+
+    ``` CSharp
+    await queueClient.CreateIfNotExistsAsync();
+
+    if (queueClient.Exists())
+    {
+        Console.WriteLine($"Queue created: '{queueClient.Name}'");
+    }
+    ```
+
+    - Insert a message into queue. A message can be either a string (in UTF-8 format) or a byte array.
+
+    ``` CSharp
+    string message = "Hello World!";
+    await queueClient.SendMessageAsync(message);
+    ```
+
+    - Peek at the next messages. We can peek at the messages in the queue without changing the visibility of them in the queue. If we do not set ``maxMessages`` parameter, the default is to peek at one message.
+
+    ``` CSharp
+    using Azure.Storage.Queues.Models; // Namespace for PeekedMessage
+
+    // Get only one message
+    PeekedMessage[] peekedMessage = await queueClient.PeekMessagesAsync();
+
+    // Get only many messages
+    PeekedMessage[] peekedMessages = await queueClient.PeekMessagesAsync(maxMessages: 32);
+    ```
+
+    - Update an existing message in the queue. The following code updates the queue message with new contents, and sets the visibility timeout to extend another 60 seconds. This saves the state of work associated with the message, and gives the client another minute to continue working on the message.
+
+    ``` CSharp
+    // Get a message at top of the queue. The returned message becomes invisible to any worker which has accessed to the queue. By default, this message stays invisible for 30 seconds.
+    QueueMessage message = await queueClient.ReceiveMessageAsync();
+
+    await queueClient.UpdateMessageAsync(
+        message.MessageId,
+        message.PopReceipt,
+        "Update content",
+        TimeSpan.FromSeconds(60.0)); // Make it invisible for another 60 seconds
+    ```
+
+    - Dequeue a message from a queue in two steps.
+
+    ``` CSharp
+
+    // Step 1:
+    // Get a message at top of the queue. The returned message becomes invisible to any worker which has accessed to the queue. By default, this message stays invisible for 30 seconds. We can set the visibilityTimeout parameter to change the invisible time.
+    QueueMessage message = await queueClient.ReceiveMessageAsync();
+
+    // TODO: Process the message here
+
+    // Step 2:
+    // To finish removing the message from the queue
+    await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt);
+
+    ```
+
+    - We can also add/update user-defined properties; and get system and user-defined property of a queue by:
+
+    ``` CSharp
+    // Set user-defined property
+    IDictionary<string, string> metadata = new Dictionary<string, string>();
+    metadata.Add("MyOwnProperty", "Hello World");
+
+    await queueClient.SetMetadataAsync(metadata);
+
+    // To retrieve all properties, use
+    QueueProperties properties = await queueClient.GetPropertiesAsync();
+    ```
+
 ### Implement solutions that use Azure Service Bus
 
 ***
@@ -882,7 +996,7 @@ TODO
 
     - Limitation: Service Bus currently allows up to **100** partitioned queues or topics per namespace
 
-3. [Code sample to getting started](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/servicebus/Azure.Messaging.ServiceBus/samples).
+3. [Code sample to get started](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/servicebus/Azure.Messaging.ServiceBus/samples).
 
 4. [Modern .NET library for Azure Service Bus](https://github.com/Azure/azure-sdk-for-net/blob/master/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md).
 
