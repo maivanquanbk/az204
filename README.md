@@ -718,9 +718,7 @@ TODO
 
     **Billing**: by hours and number of operations. In Basic tier, it only charges on number of operations.
 
-2. [Code sample to getting started](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/servicebus/Azure.Messaging.ServiceBus/samples).
-
-3. Advanced features.
+2. Advanced features.
 
     **Message session**: To create FIFO guarantee in Service Bus.
     - The Basic tier does not support **Session**.
@@ -883,6 +881,10 @@ TODO
       - All messages that are sent as part of the same transaction must specify the same partition key. If we attempt to send a message without a partition key within a transaction, Service Bus returns an invalid operation exception. If you attempt to send multiple messages within the same transaction that have different partition keys, Service Bus returns an invalid operation exception.
 
     - Limitation: Service Bus currently allows up to **100** partitioned queues or topics per namespace
+
+3. [Code sample to getting started](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/servicebus/Azure.Messaging.ServiceBus/samples).
+
+4. [Modern .NET library for Azure Service Bus](https://github.com/Azure/azure-sdk-for-net/blob/master/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md).
 
 ## Additional Tips and Resources
 
