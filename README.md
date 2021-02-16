@@ -701,7 +701,7 @@ TODO
 
     **Event type**: By default all event types for the event source are sent to the endpoint. We can provide an array with the event types, or specify ``All`` to get all event types for the event source. Example:
 
-    ``` Json
+    ``` json
     "filter": {
         "includedEventTypes": [
             "Microsoft.Resources.ResourceWriteFailure",
@@ -712,7 +712,7 @@ TODO
 
     **Subject begins with or ends with**: specify a starting or ending value for the subject. The below example shows how we filter events for a specific file type ``JPG``, in a specific Blob storage container ``images``:
 
-    ``` Json
+    ``` json
     "filter": {
         "subjectBeginsWith": "/blobServices/default/containers/images",
         "subjectEndsWith": ".jpg"
@@ -726,7 +726,7 @@ TODO
 
     If we specify multiple values in one filter, then the ``OR`` operation is applied. The below example filters events from both container ``images`` and ``audios``:
 
-    ``` Json
+    ``` json
     "advancedFilters": [
         {
             "operationType": "StringContains",
@@ -741,7 +741,7 @@ TODO
 
     If we specify multiple filters, then the ``AND`` operation is performed, so each filter condition must be met. Example:
 
-    ``` Json
+    ``` json
     "advancedFilters": [
          {
             "operatorType": "StringContains",
