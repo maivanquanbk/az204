@@ -17,6 +17,7 @@
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
+    - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
   - [Additional Tips and Resources](#additional-tips-and-resources)
 
 ## Develop Azure compute solution (25-30%)
@@ -668,7 +669,220 @@ TODO
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
-TODO
+### Implement solutions that use Azure Service Bus
+
+***
+
+1. Concepts and terminology
+
+    **Namespace**:
+
+    - A namespace is a container of all messaging components which are queues and topics.
+    - Topics and Subscriptions feature is not supported in **Basic** tier.
+
+    **Queue**:
+    - Store messages until downstream applications are available to receive and process the messages.
+    - Messages on queue are ordered and timestamped on arrival.
+    - Messages are delivered in **pull** mode. The pull operation is long-lived and only complete once a message is available.
+
+    **Topic**:
+    - While Queue is point-to-point communication, Topics and Subscriptions are useful in publish/subscribe scenarios.
+    - A subscriber to a topic can receive a copy of each message sent to the topic.
+
+    **Topic Filter**:
+    - We can config a filter condition for a subscription to specify which messages will be copied from the topic. There are 3 types of filter:
+      - **Boolean Filter**: the **TrueFilter** and **FalseFilter** either cause all arriving messages (true) or none of the arriving messages (false) to be copied to the subscription.
+      - **SQL Filter**: holds a SQL-like conditional expression in which the broker will evaluate against messages' user-defined properties or system properties. All system properties must start with ``sys.`` in the conditional expression.
+      - **Correlation Filter**: holds a set of conditions that are matched against one or more of an arriving messages' user and system properties. A match exists when a property's value is equal to the value specified in the correlation filter. In case string expression, the comparison is case-sensitive. We can combine multiple matched properties by the **AND** logical operation.
+
+    - In most cases, if possible prefer to use Boolean Filter and Correlation Filter since SQL Filter causes lower message throughput.
+    - Default Filter for a new subscription is **True Filter**.
+
+    **Topic Action**:
+    - A rule for a subscription contains not only filter conditions but also an **action**. The action can add, update, or delete properties from the original message to produce a "clone" message in the subscription.
+    - Whenever a message has matched against a rule which combines filter conditions and an action, a copy of message will be generated.
+    - It means if a subscription has N rules, and each rule has an action, then N messages will be produced on the subscription.
+    - This message will have a property called ``RuleName`` where the value is the name of the matching rule.
+
+    **Message size**: 256 KB / message in Standard tier, 1 MB / message in Premium tier.
+
+    **Premium tier**:
+    - Provides resource isolation at the CPU and memory level so that each workload runs in isolation.
+    - At the **Premium** tier, we need specify the number of messaging units (minium is 1) and are able to enable Zone redundancy.
+    - To choose the correct number of messaging units:
+      - Start with 1 or 2 messaging units.
+      - If the CPU usage is bellow 20%, then scale down.
+      - If the CPU usage is above 70%, then scale up.
+    - We can set rules for auto scale up or down like the way we set up for App Service Plan.
+    - With Topics and Subscriptions, Premium tier also allows creating volatile subscriptions that exist for the duration of the connection.
+
+    **Billing**: by hours and number of operations. In Basic tier, it only charges on number of operations.
+
+2. [Code sample to getting started](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/servicebus/Azure.Messaging.ServiceBus/samples).
+
+3. Advanced features.
+
+    **Message session**: To create FIFO guarantee in Service Bus.
+    - The Basic tier does not support **Session**.
+    - When **Session** is enabled, the client application can no longer receive or send regular messages. All messages must be sent as part of a session (by setting sessionId) and received by receiving the session.
+    - To allow for handling sessions in high-scale, high-availability systems, the session feature also supports to set/get a **session state**. This feature allows the workflow process associated with a session can recover from unexpected failures. We can think it is like a **Checkpoint**.
+    - The message session state can hold data of the size of one message (i.e. 256 KB for Standard, and 1 MB for Premium).
+
+    **Auto forwarding**:
+    - The Basic tire does not support **Auto forwarding**.
+    - Service Bus automatically remove messages that are placed in the first queue or subscription (source) and put them into the second queue or topic (destination). Such moves are done **transactionally**.
+    - Usage patterns:
+      - Overcome the limitation of number subscriptions per topic (2000) by creating second-level topics.
+
+        ![image](https://docs.microsoft.com/en-us/azure/service-bus-messaging/media/service-bus-auto-forwarding/ic628631.gif)
+
+      - To decouple message senders from receivers.
+
+        ![image](https://docs.microsoft.com/en-us/azure/service-bus-messaging/media/service-bus-auto-forwarding/ic628632.gif)
+
+    - Considerations:
+      - When the destination exceeds the quota, or it is disabled, the source entity adds messages to its dead-letter queue.
+      - To maximize the throughput of fan-out, it is a recommended that we have moderate number of subscriptions on the first-level topic (E.g 20 subscriptions), each of them chains with the second-level topics with a large number of subscriptions (E.g. 200 subscriptions).
+      - Don't create a chain that exceeds 4 hops. Messages that exceed 4 hops are dead-lettered.
+      - To create a chain, the creator of the subscription must have **Manage permissions** on both the source and the destination entity.
+
+    - We can enable auto forwarding by setting the ``QueueDescription.ForwardTo`` and ``SubscriptionDescription.ForwardTo`` properties of the source. Example:
+
+        ``` CSharp
+        SubscriptionDescription srcSubscription = new SubscriptionDescription (srcTopic, srcSubscriptionName);
+        srcSubscription.ForwardTo = destTopic;
+        namespaceManager.CreateSubscription(srcSubscription);
+        ```
+
+    **Dead-letter Queue**:
+    - All queues and topic subscriptions have an associated DLQ. DLQ holds messages which meets those criterial:
+      - They can't be delivered successfully to any receiver (Default maximum deliver count is **10**).
+      - They timed out (exceed TimeToLive).
+      - They're explicitly sidelined by the receiving application.
+    - Path to DLQ:
+
+        ``` Unknown
+        <queue path>/$deadletterqueue
+        <topic path>/Subscriptions/<subscription path>/$deadletterqueue
+        ```
+
+    **Scheduled deliver**:
+    - We can set a time when a message in a queue or subscription will become available for the consumer.
+    - Scheduled messages can also be canceled. Cancellation deletes the message.
+    - We can scheduled a message by setting the ``ScheduledEnqueueTimeUtc`` in the ``Message`` object or explicitly with the ``ScheduleMessageAsync`` API. The latter immediately returns the scheduled message's **SequenceNumber**, which we can use later to cancel the scheduled message if needed.
+
+    ``` CSharp
+    // Set ScheduledEnqueueTimeUtc
+    byte[] content = Encoding.UTF8.GetBytes("Hello World!");
+    Message message = new Message(content);
+    message.ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddMinutes(10);
+
+    await queueClient.SendAsync(message);
+    ```
+
+    ``` CSharp
+
+    // Use ScheduleMessageAsync to schedule a message. If you want to schedule a batch of message, use the above approach.
+    byte[] content = Encoding.UTF8.GetBytes("Hello World!");
+    Message message = new Message(content);
+
+    long messageSequenceNumber = await queueClient.ScheduleMessageAsync(message, DateTimeOffset.UtcNow.AddMinutes(10));
+
+    // Cancel the scheduled message
+    await queueClient.CancelScheduledMessageAsync(messageSequenceNumber);
+    ```
+
+    **Message deferral**:
+    - When a queue or subscription client receives a message that is willing to process, but due to the state inside of the application, it has an option of "deferring" retrieval of the message to the later point.
+    - The deferred message is still in the main queue or subscription (not in DLQ) but it is set aside.
+    - To retrieve a deferred message, the application is responsible for remembering the SequenceNumber of the message, and later can receive explicitly the message with ``Receive(sequenceNumber)``.
+    - Deferred messages can be discovered via **message browsing** if an application loses track of them.
+    - Deferred messages will not be automatically moved to the dead-letter queue after they expire. This behaviour is by design.
+
+    ``` CSharp
+    using Microsoft.Azure.ServiceBus.Core;
+
+    MessageReceiver messageReceiver = new MessageReceiver(serviceBusConnectionString, queueName, ReceiveMode.PeekLock);
+
+    // Defer a message
+    long sequenceNumber = await messageReceiver.DeferAsync(message.SystemProperties.LockToken);
+
+    // Receive message
+    var deferredMessage = await messageReceiver.ReceiveDeferredMessageAsync(sequenceNumber);
+    ```
+
+    **Transactions**:
+    - Service Bus allows you to group operations against multiple messaging entities within the scope of a single transaction.
+    - A transaction times out after **2 minutes**. The transaction timer starts when the first operation in the transaction starts.
+    - ``Receive`` operation cannot be included in a Transaction.
+
+    ``` CSharp
+    var connection = new ServiceBusConnection(connectionString);
+    var sender = new MessageSender(connection, QueueName);
+    var receiver = new MessageReceiver(connection, QueueName);
+
+    var receivedMessage = await receiver.ReceiveAsync();
+
+    using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+    {
+        try
+        {
+            if (receivedMessage != null)
+            {
+                // do some processing
+                await receiver.CompleteAsync(receivedMessage.SystemProperties.LockToken);
+            }
+
+            var myMsgBody = new MyMessage
+            {
+                Name = "Some name",
+                Address = "Some street address",
+                ZipCode = "Some zip code"
+            };
+
+            // send message
+            var message = myMsgBody.AsMessage();
+            await sender.SendAsync(message).ConfigureAwait(false);
+            Console.WriteLine("Message has been sent");
+
+            // complete the transaction
+            ts.Complete();
+        }
+        catch (Exception e)
+        {
+            // This rolls back send and complete in case an exception happens
+            ts.Dispose();
+
+            // handle error
+        }
+    }
+    ```
+
+    **Duplicate detection**:
+    - The Basic tire does not support **Auto forwarding**.
+    - Service Bus keeps track of the **MessageId** of all messages sent to a queue or topic during a specified time window.
+    - If any new message is sent with MessageId that was logged during the time window, the newly sent message is instantly ignored and dropped. However, **the send operation succeeds**
+
+    > **Important**
+    >
+    > - When partitioning is enabled, MessageId+PartitionKey is used to determine uniqueness. When sessions are enabled, partition key and session ID must be the same.
+    > - When partitioning is disabled (default), only MessageId is used to determine uniqueness.
+    > - You can't enable/disable duplicate detection after the queue is created. You can only do so at the time of creating the queue.
+
+    **Partitioned queues and topics**:
+    - Partitioning is available at entity creation for all queues and topics in Basic or Standard SKUs. It is not available for the Premium messaging SKU.
+    - A partition composes of a message broker and a storage hence the overall throughput is no longer limited by the performance of a single message broker or capacity of a message store.
+    - A receiving client is not aware of the partitioning. It receives message from a partitioned entities like the way it works with regular entities.
+    - When **Partitioning** is enabled, Service Bus routes the message to a partition based on **Partition Key** if it is specified, however, there are special cases:
+      - If **Message Session** is enabled, Service Bus will use **SessionId** as the partition key to ensure the ordering of all messages in the same session. In case the **Partition Key** is also specified, it must be the same as **SessionId**. Otherwise, Service Bus will throw ``InvalidOperationException``.
+      - If **Duplication Detection** is enabled, and the **Partition Key** and **SessionId** are not set, Service Bus use **MessageId** and the partition key.
+      - In the absence of the **Partition Key**, Service Bus distributes messages in a round-robin fashion to all the partitions of the partitioned queue or topic.
+    - To **Partitioning** can work with other features, we need to adhere to the bellow requirements:
+      - All messages of the same session must be handled by a single message broker (i.e. same partition) to ensure the ordering.
+      - All messages which have the same **MessageId** must be handled by a single message broker to remove duplicated messages.
+      - All messages that are sent as part of the same transaction must specify the same partition key. If we attempt to send a message without a partition key within a transaction, Service Bus returns an invalid operation exception. If you attempt to send multiple messages within the same transaction that have different partition keys, Service Bus returns an invalid operation exception.
+
+    - Limitation: Service Bus currently allows up to **100** partitioned queues or topics per namespace
 
 ## Additional Tips and Resources
 
