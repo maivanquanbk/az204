@@ -17,6 +17,7 @@
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
+    - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
     - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
     - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
   - [Additional Tips and Resources](#additional-tips-and-resources)
@@ -669,6 +670,102 @@ TODO
 TODO
 
 ## Connect to and consume Azure services and third-party services (25-30%)
+
+### Implement solutions that use Azure Event Grid
+
+***
+
+1. Concepts, terminology and limitations
+
+    Event Grid is a serverless service and an eventing backplane that enables event-driven, reactive programming. It uses a publish-subscribe model. Event Grid isn't a data pipeline, and doesn't deliver the actual object that was updated.
+
+    **Events**:
+    - An event is the smallest amount of information that fully describes something that happened in the system.
+    - When posting events to an Event Grid topic, the array can have a total size of up to **1 MB**.  Each event in the array is limited to **1 MB**. If an event or the array is greater than the size limits, then we will receive the response **413 Payload Too Large**.
+    - Events over **64 KB** are charged in 64-KB increments. For example, an event that is 130 KB would incur operations as though it were 3 separate events.
+
+    **Topics**:
+    - Provide an endpoint in which the source send events.
+    - **System topics** are built-in topics provided by Azure services such as Azure Storage, Azure Event Hubs, and Azure Service Bus.
+    - **Custom topics** are application and third-party topics which expose an endpoint where we can POST an event using HTTP/HTTPS.
+    - The **Partner Events** feature allows a third-party SaaS provider to publish events from its services so that consumers can subscribe to those events.
+
+    **Event subscriptions**:
+    - A subscription for a topic. When creating a subscription, we also provide an endpoint for handling the event.
+    - We can filter events that send to the endpoints.
+    - We can set an expiration for a subscription so that the event subscription is automatically expired after a date.
+
+2. Event subscription filter
+
+    We have three options for filtering:
+
+    **Event type**: By default all event types for the event source are sent to the endpoint. We can provide an array with the event types, or specify ``All`` to get all event types for the event source. Example:
+
+    ``` Json
+    "filter": {
+        "includedEventTypes": [
+            "Microsoft.Resources.ResourceWriteFailure",
+            "Microsoft.Resources.ResourceWriteSuccess"
+        ]
+    }
+    ```
+
+    **Subject begins with or ends with**: specify a starting or ending value for the subject. The below example shows how we filter events for a specific file type ``JPG``, in a specific Blob storage container ``images``:
+
+    ``` Json
+    "filter": {
+        "subjectBeginsWith": "/blobServices/default/containers/images",
+        "subjectEndsWith": ".jpg"
+    }
+    ```
+
+    **Advanced fields and operators**: To filter by values in the data fields and specify the comparison operator. In advanced filtering, we specify the:
+    - **operatorType**: The type of comparison.
+    - **key**: The field in the event data that we're using for filtering. It can be a number, boolean, or string.
+    - **values**: The value or values to compare to the key.
+
+    If we specify multiple values in one filter, then the ``OR`` operation is applied. The below example filters events from both container ``images`` and ``audios``:
+
+    ``` Json
+    "advancedFilters": [
+        {
+            "operationType": "StringContains",
+            "key": "Subject",
+            "values": [
+               "/blobServices/default/containers/images",
+               "/blobServices/default/containers/audios" 
+            ]
+        }
+    ]
+    ```
+
+    If we specify multiple filters, then the ``AND`` operation is performed, so each filter condition must be met. Example:
+
+    ``` Json
+    "advancedFilters": [
+         {
+            "operatorType": "StringContains",
+            "key": "Subject",
+            "values": [
+                "/providers/microsoft.devtestlab/"
+            ]
+        },
+        {
+            "operatorType": "StringContains",
+            "key": "Subject",
+            "values": [
+                "/providers/Microsoft.Compute/virtualMachines/"
+            ]
+        }
+    ]
+    ```
+
+    Advanced filtering has the following limitations:
+    - **5** advanced filters and **25** filter values across all the filters per event subscription.
+    - **512** characters per string value.
+    - **5** values for in and not in operators.
+    - Keys with . (dot) character in them. For example: ``http://schemas.microsoft.com/claims/authnclassreference`` or ``john.doe@contoso.com``. Currently, there's no support for escape characters in keys.
+
 
 ### Implement solutions that use Azure Queue
 
