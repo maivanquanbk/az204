@@ -985,6 +985,78 @@ TODO
         - By explicitly sending events to a specific partition.
     - Specifying a partition key enables keeping related events together in the same partition and in the exact order in which they were sent.
 
+3. Samples for [.NET library for Event Hubs](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/messaging.eventhubs-readme?view=azure-dotnet)
+
+    **Publish events to an Event Hub**: In order to publish events, you'll need to create an ``EventHubProducerClient``.
+
+    ``` CSharp
+    using Azure.Messaging.EventHubs;
+
+    string connectionString = "CONNECTION_STRING";
+    string eventHubName = "HUB_NAME";
+
+    await using (var producer = new EventHubProducerClient(connectionString, eventHubName))
+    {
+        using EventBatchData eventBatch = await producer.CreateBatchAsync();
+        eventBatch.TryAdd(new EventData(new BinaryData("First")));
+        eventBatch.TryAdd(new EventData(new BinaryData("Second")));
+
+        await producer.SendAsync(eventBatch);
+    }
+    ```
+
+    **Process events using an Event Processor client**: For the majority of production scenarios, it is recommended that the ``EventProcessorClient`` be used for reading and processing events.
+
+    ``` CSharp
+    // Since the EventProcessorClient has a dependency on Azure Storage blobs for persistence of its state, you'll need to provide a BlobContainerClient for the processor, which has been configured for the storage account and container that should be used.
+
+    var cancellationSource = new CancellationTokenSource();
+    var cancellationSource.CancelAfter(TimeSpan.FromSeconds(45.0));
+
+    var storageConnectionString = "<< CONNECTION STRING FOR THE STORAGE ACCOUNT >>";
+    var blobContainerName = "<< NAME OF THE BLOB CONTAINER >>";
+
+    var eventHubsConnectionString = "<< CONNECTION STRING FOR THE EVENT HUBS NAMESPACE >>";
+    var eventHubName = "<< NAME OF THE EVENT HUB >>";
+    var consumerGroup = "<< NAME OF THE EVENT HUB CONSUMER GROUP >>";
+
+    // Create BlobContainerClient and EventProcessorClient
+    var blobContainerClient = new BlobContainerClient(storageConnectionString, blobContainerName);
+    var processorClient = new EventProcessorClient(blobContainerClient, consumerGroup, eventHubConnectionString, eventHubName);
+
+    // Register handlers for incoming events and errors
+    Task processEventHandler(ProcessEventArgs eventArgs) => Task.CompletedTask;
+    Task processErrorHandler(ProcessErrorEventArgs errorArgs) => Task.CompletedTask;
+
+    processorClient.ProcessEventAsync += processEventHandler;
+    processorClient.ProcessErrorAsync += processErrorHandler;
+
+    // Start processor
+    await processor.StartProcessingAsync();
+
+    try
+    {
+        // The processor performs its work in the background; block until cancellation
+        // to allow processing to take place.
+        await Task.Delay(Timeout.Infinite, cancellationSource.Token);
+    }
+    catch (TaskCanceledException)
+    {
+        // This is expected when the delay is canceled.
+    }
+
+    try
+    {
+        await processor.StopProcessingAsync();
+    }
+    finally
+    {
+        // To prevent leaks, the handlers should be removed when processing is complete.
+        processor.ProcessEventAsync -= processEventHandler;
+        processor.ProcessErrorAsync -= processErrorHandler;
+    }
+    ```
+
 ### Implement solutions that use Azure Queue
 
 ***
