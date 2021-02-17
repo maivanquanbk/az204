@@ -832,6 +832,90 @@ TODO
       - **Synchronous handshake**: At the time of event subscription creation, Event Grid sends a subscription validation event to the endpoint. The application behinds the endpoint must validate the ``validationCode`` inside the data portion of the event.
       - **Asynchronous handshake**: Starting with version 2018-05-01-preview,  Event Grid sends a ``validationUrl`` property in the data portion of the subscription validation event. To complete the handshake, find that URL in the event data and do a GET request to it. The provided URL is valid for **5 minutes**.
 
+4. .NET library code samples
+
+    **Publishing Events to an Event Grid Topic**:
+
+    ``` CSharp
+    using Azure.Messaging.EventGrid;
+
+    // Creating and Authenticating EventGridPublisherClient
+    EventGridPublisherClient client = new EventGridPublisherClient(
+        new Uri(topicEndpoint),
+        new AzureKeyCredential(topicAccessKey));
+
+    // Publishing Events to Azure Event Grid
+    // Using EventGridEvent
+
+    List<EventGridEvent> eventsList = new List<EventGridEvent>
+    {
+        new EventGridEvent(
+            subject: "ExampleEventSubject",
+            eventType: "Example.EventType",
+            dataVersion: "1.0",
+            data: "This is the event data")
+    };
+
+    await client.SendEventsAsync(eventsList);
+
+    // Use CloudEvent
+    List<CloudEvent> eventsList = new List<CloudEvent>
+    {
+        // CloudEvent with populated data
+        new CloudEvent(
+            source: "/cloudevents/example/source",
+            type: "Example.EventType",
+            data: "This is the event data"),
+        
+         // CloudEvents also supports sending binary-valued data
+        new CloudEvent(
+            source: "/cloudevents/example/binarydata",
+            type: "Example.EventType",
+            data: Encoding.UTF8.GetBytes("This is binary data"),
+            dataContentType: "example/binary")
+    };
+
+    await client.SendEventsAsync(eventsList);
+    ```
+
+    **Deserializing Events Delivered to Event Handlers**:
+
+    ``` CSharp
+    // Regardless of the event handler, however, events are always sent as UTF-8 encoded JSON.
+
+    // Parse Events from JSON payload.
+    // Once events are delivered to the event handler, parse the JSON payload into list of events.
+
+    // Use EventGridEvent
+    EventGridEvent[] events = EventGridEvent.Parse(jsonPayload);
+
+    // Use CloudEvent
+    CloudEvent[] events = CloudEvent.Parse(jsonPayload);
+
+    // Deserialize Event Data
+    // We can access the event data by deserializing to a specific type using GetData<T>()
+    foreach (CloudEvent cloudEvent in cloudEvents)
+    {
+        switch (cloudEvent.Type)
+        {
+            case "Contoso.Items.ItemReceived":
+                // By default, GetData uses JsonObjectSerializer to deserialize the payload
+                ContosoItemReceivedEventData itemReceived = cloudEvent.GetData<ContosoItemReceivedEventData>();
+                Console.WriteLine(itemReceived.ItemSku);
+                break;
+            case "MyApp.Models.CustomEventType":
+                // One can also specify a custom ObjectSerializer as needed to deserialize the payload correctly
+                TestPayload testPayload = cloudEvent.GetData().ToObject<TestPayload>(myCustomSerializer);
+                Console.WriteLine(testPayload.Name);
+                break;
+            case SystemEventNames.StorageBlobDeleted:
+                // Example for deserializing system events using GetData<T>
+                StorageBlobDeletedEventData blobDeleted = cloudEvent.GetData<StorageBlobDeletedEventData>();
+                Console.WriteLine(blobDeleted.BlobType);
+                break;
+        }
+    }
+    ```
 
 ### Implement solutions that use Azure Queue
 
