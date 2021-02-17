@@ -1,26 +1,25 @@
-# AZ-204 Revise Note
+****# AZ-204 Revise Note
 
-- [AZ-204 Revise Note](#az-204-revise-note)
-  - [Develop Azure compute solution (25-30%)](#develop-azure-compute-solution-25-30)
-    - [Implement IaaS Solutions](#implement-iaas-solutions)
-      - [Provision VMs](#provision-vms)
-      - [Configure VM for remote access](#configure-vm-for-remote-access)
-      - [Manage the availability of your Azure VMs](#manage-the-availability-of-your-azure-vms)
-      - [VMs data backup and recovery](#vms-data-backup-and-recovery)
-      - [Azure Resource Manager templates](#azure-resource-manager-templates)
-      - [Create, publish and deploy container images for solutions](#create-publish-and-deploy-container-images-for-solutions)
-    - [Create Azure App Service Web Apps](#create-azure-app-service-web-apps)
-    - [Implement Azure Function](#implement-azure-function)
-  - [Develop Azure Storage (10-15%)](#develop-azure-storage-10-15)
-    - [Develop solutions that use Cosmos DB storage](#develop-solutions-that-use-cosmos-db-storage)
-    - [Develop solutions that use blob storage](#develop-solutions-that-use-blob-storage)
-  - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
-  - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
-  - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
-    - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
-    - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
-    - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
-  - [Additional Tips and Resources](#additional-tips-and-resources)
+- [Develop Azure compute solution (25-30%)](#develop-azure-compute-solution-25-30)
+  - [Implement IaaS Solutions](#implement-iaas-solutions)
+    - [Provision VMs](#provision-vms)
+    - [Configure VM for remote access](#configure-vm-for-remote-access)
+    - [Manage the availability of your Azure VMs](#manage-the-availability-of-your-azure-vms)
+    - [VMs data backup and recovery](#vms-data-backup-and-recovery)
+    - [Azure Resource Manager templates](#azure-resource-manager-templates)
+    - [Create, publish and deploy container images for solutions](#create-publish-and-deploy-container-images-for-solutions)
+  - [Create Azure App Service Web Apps](#create-azure-app-service-web-apps)
+  - [Implement Azure Function](#implement-azure-function)
+- [Develop Azure Storage (10-15%)](#develop-azure-storage-10-15)
+  - [Develop solutions that use Cosmos DB storage](#develop-solutions-that-use-cosmos-db-storage)
+  - [Develop solutions that use blob storage](#develop-solutions-that-use-blob-storage)
+- [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
+- [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
+- [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
+  - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
+  - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
+  - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
+- [Additional Tips and Resources](#additional-tips-and-resources)
 
 ## Develop Azure compute solution (25-30%)
 
@@ -765,6 +764,73 @@ TODO
     - **512** characters per string value.
     - **5** values for in and not in operators.
     - Keys with . (dot) character in them. For example: ``http://schemas.microsoft.com/claims/authnclassreference`` or ``john.doe@contoso.com``. Currently, there's no support for escape characters in keys.
+
+3. Advanced features
+
+    **Batch event delivery**:
+    - Event Grid defaults to send each event individually to subscribers. The subscriber receives an array with a single event.
+    - We can enable **Batch event delivery** for each subscription by setting two parameters:
+      - **Max events per batch**: The maximum number of events that the subscription will include in one batch. However, Event Grid does not delay events in order to create a batch if fewer events are available. Must be between 1 and 5,000.
+      - **Preferred batch size in kilobytes**: Set the preferred upper bound of batch size in KB. An event whose size is large than this threshold will not be dropped. Must be between 1 and 1,000.
+    - Setting with Azure CLI:
+
+        ``` bash
+        storageId = $(az storage account show --name <storage_account_name> --resource-group <resource-group> --query id --output tsv)
+        endpoint = https://$sitename.azurewebsites.net/api/updates
+
+        az eventgrid event-subscription create \
+            --resource-id $storageId \
+            --name <event_subscription_name> \
+            --endpoint $endpoint
+            --max-events-per-batch 1000 \
+            --preferred-batch-size-in-kilobytes 512
+        ```
+
+    **Retry schedule and duration**:
+    - When receiving an error from an event delivery, EventGrid either retries, or dead-letter or drop the event based on the return error.
+    - Bellow are errors that EventGrid will not retry and decides to drop the event if **Dead-Letter** is not configured for the subscription.
+
+        | Endpoint Type | Error Codes |
+        | :--- | :--- |
+        | Azure Resources | 400 Bad Request, 413 Request Entity Too Large, 403 Forbidden |
+        | Webhook | 400 Bad Request, 413 Request Entity Too Large, 403 Forbidden, 404 Not Found, 401 Unauthorized |
+
+    - Event Grid uses an exponential backoff retry policy for event delivery.
+    - By default, EventGrid expires all events that aren't delivered within 24 hours or 30 times. We can customize the retry policy by changing two settings ``event-ttl`` (event time-to-live) and ``max-deliver-attempts``. In the bellow example, EventGrid will retry an event within 48 hours or the number of attempts are less than or equal 50:
+
+        ``` bash
+        az eventgrid event-subscription create \
+            --resource-group <resource_group>
+            --topic-name <topic> \
+            --name <event_subscription_name> \
+            --endpoint <endpointUrl> \
+            --event-ttl 2880 \
+            --max-deliver-attempts 50 
+        ```
+
+    - To set dead-letter location for holding events that can't be delivered to an endpoint. We would need a Blob container. The examples get the resource ID of an existing storage account. They create an event subscription that uses a container in that storage account for the dead-letter endpoint.
+
+        ``` bash
+        containerName = deadLetter
+        resourceGroup = myResourceGroup
+
+        topicId = $(az eventgrid topic show --name myTopic --resource-group $resourceGroup --query id --output tsv)
+        storageAccountId = $(az storage account show --name myStorageAccount --resource-group $resourceGroup --query id --output tsv)
+
+        az eventgrid event-subscription create \
+            --source-resource-id $topicId \
+            --name <event_subscription_name> \
+            --endpoint <endpointUrl> \
+            --deadletter-endpoint $storageAccountId/blobServices/default/containers/$containerName
+        ```
+
+        To turn off dead-lettering, rerun the command to create the event subscription but don't provide a value for deadletter-endpoint. We don't need to delete the event subscription.
+
+    **Webhook Event delivery**:
+    - When a new event is ready, Event Grid service POSTs an HTTP request to the configured endpoint with the event in the request body.
+    - Endpoint validation with Event Grid events:
+      - **Synchronous handshake**: At the time of event subscription creation, Event Grid sends a subscription validation event to the endpoint. The application behinds the endpoint must validate the ``validationCode`` inside the data portion of the event.
+      - **Asynchronous handshake**: Starting with version 2018-05-01-preview,  Event Grid sends a ``validationUrl`` property in the data portion of the subscription validation event. To complete the handshake, find that URL in the event data and do a GET request to it. The provided URL is valid for **5 minutes**.
 
 
 ### Implement solutions that use Azure Queue
