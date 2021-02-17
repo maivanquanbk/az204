@@ -17,11 +17,13 @@
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
-    - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
-    - [Implement solutions that use Azure Event Hub](#implement-solutions-that-use-azure-event-hub)
-    - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
-    - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
-    - [Implement solutions that use Azure Notification Hubs](#implement-solutions-that-use-azure-notification-hubs)
+    - [Develop event-based solutions](#develop-event-based-solutions)
+      - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
+      - [Implement solutions that use Azure Event Hub](#implement-solutions-that-use-azure-event-hub)
+      - [Implement solutions that use Azure Notification Hubs](#implement-solutions-that-use-azure-notification-hubs)
+    - [Develop message-based solutions](#develop-message-based-solutions)
+      - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
+      - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
   - [Additional Tips and Resources](#additional-tips-and-resources)
 
 ## Develop Azure compute solution (25-30%)
@@ -673,7 +675,11 @@ TODO
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
-### Implement solutions that use Azure Event Grid
+### Develop event-based solutions
+
+***
+
+#### Implement solutions that use Azure Event Grid
 
 ***
 
@@ -920,7 +926,7 @@ TODO
     }
     ```
 
-### Implement solutions that use Azure Event Hub
+#### Implement solutions that use Azure Event Hub
 
 ***
 
@@ -1059,7 +1065,76 @@ TODO
     }
     ```
 
-### Implement solutions that use Azure Queue
+#### Implement solutions that use Azure Notification Hubs
+
+***
+
+1. How do push notifications work?
+
+    Push notifications are delivered through platform-specific infrastructures called *PlatForm Notification Systems (PNSes)*. They offers basic push functionalities to deliver a message to a device with the provided *handle*.
+
+    To send a notification to all customers across the Android, iOS, and Windows versions of an app, the developer must work separately with Apple Push Notification Service (APNS), Firebase Cloud Messaging (FCM), and Windows Notification Service (WNS).
+
+    At a high level, here is how push works:
+
+    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-overview/registration-diagram.png)
+
+2. Why use Azure Notification Hubs?
+
+    **Notification Hubs** eliminates all complexities associated with sending push notifications from the app backend. Its multi-platform, scaled-out push notification infrastructure reduces push-related coding and simplifies the backend.
+
+3. Device registration
+    Device registration with a Notification Hub is accomplished using a **Registration** or **Installation**.
+
+    **Registrations**: A registration associates the Platform Notification Service (PNS) handle for a device with tags and possibly a template. The PNS handle could be a ChannelURI, device token, or FCM registration ID.
+
+    > Note: Azure Notification Hubs supports a maximum of 60 tags per device.
+
+    **Installation**: An Installation is an enhanced registration that includes a bag of push related properties. It is the latest and best approach to registering your devices. The following are some key advantages to using installations:
+    - Creating or updating an installation is fully idempotent.
+    - The installation model supports a special tag format ``($InstallationId:{INSTALLATION_ID})`` that enables sending a notification directly to the specific device.
+    - Using installations also enables you to do partial registration updates. The partial update of an installation is requested with a PATCH method using the JSON-Patch standard.
+
+    **Registration management from a backend**:
+
+    When managing device registration from client apps, the backend is only responsible for sending notifications. Client apps keep PNS handles up-to-date, and register tags. The following picture illustrates this pattern.
+
+    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-backend.png)
+
+    1. The device first retrieves the PNS handle from the PNS.
+    2. Then it registers the handle with the notification hub directly.
+    3. After the registration is successful, the app backend can send a notification targeting that registration.
+
+    In this case, we use only **Listen** rights to access your notification hubs from the device.
+
+    Registering from the device is the simplest method, but it has some drawbacks:
+    - A client app can only update its tags when the app is active. More generally, when tags are affected by multiple devices, managing tags from the backend is a desirable option.
+    - Since apps can be hacked, securing the registration to specific tags requires extra care.
+
+    **Registration management from the device**:
+
+    Managing registrations from the backend requires writing additional code. The app from the device must provide the updated PNS handle to the backend every time the app starts (along with tags and templates), and the backend must update this handle on the notification hub. The following picture illustrates this design.
+
+    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-device.png)
+
+    The advantages of managing registrations from the backend include the ability to modify tags to registrations even when the corresponding app on the device is inactive, and to authenticate the client app before adding a tag to its registration.
+
+4. Security
+
+   When creating a hub, two rules are automatically created: one with Listen rights (that the client app uses) and one with all rights (that the app backend uses):
+
+    - **DefaultListenSharedAccessSignature**: grants **Listen** permission only.
+    - **DefaultFullSharedAccessSignature**: grants **Listen**, **Manage**, and **Send** permissions. This policy is to be used only in your app backend. Do not use it in client applications; use a policy with only **Listen** access.
+
+5. [.Net Library For Notification Hubs](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/notification-hubs?view=azure-dotnet)
+
+   ``NotificationHubClient`` is an instance to interact with Notification Hubs.
+
+### Develop message-based solutions
+
+***
+
+#### Implement solutions that use Azure Queue
 
 ***
 
@@ -1172,7 +1247,7 @@ TODO
     QueueProperties properties = await queueClient.GetPropertiesAsync();
     ```
 
-### Implement solutions that use Azure Service Bus
+#### Implement solutions that use Azure Service Bus
 
 ***
 
@@ -1388,71 +1463,6 @@ TODO
 3. [Code sample to get started](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/servicebus/Azure.Messaging.ServiceBus/samples).
 
 4. [Modern .NET library for Azure Service Bus](https://github.com/Azure/azure-sdk-for-net/blob/master/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md).
-
-### Implement solutions that use Azure Notification Hubs
-
-***
-
-1. How do push notifications work?
-
-    Push notifications are delivered through platform-specific infrastructures called *PlatForm Notification Systems (PNSes)*. They offers basic push functionalities to deliver a message to a device with the provided *handle*.
-
-    To send a notification to all customers across the Android, iOS, and Windows versions of an app, the developer must work separately with Apple Push Notification Service (APNS), Firebase Cloud Messaging (FCM), and Windows Notification Service (WNS).
-
-    At a high level, here is how push works:
-
-    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-overview/registration-diagram.png)
-
-2. Why use Azure Notification Hubs?
-
-    **Notification Hubs** eliminates all complexities associated with sending push notifications from the app backend. Its multi-platform, scaled-out push notification infrastructure reduces push-related coding and simplifies the backend.
-
-3. Device registration
-    Device registration with a Notification Hub is accomplished using a **Registration** or **Installation**.
-
-    **Registrations**: A registration associates the Platform Notification Service (PNS) handle for a device with tags and possibly a template. The PNS handle could be a ChannelURI, device token, or FCM registration ID.
-
-    > Note: Azure Notification Hubs supports a maximum of 60 tags per device.
-
-    **Installation**: An Installation is an enhanced registration that includes a bag of push related properties. It is the latest and best approach to registering your devices. The following are some key advantages to using installations:
-    - Creating or updating an installation is fully idempotent.
-    - The installation model supports a special tag format ``($InstallationId:{INSTALLATION_ID})`` that enables sending a notification directly to the specific device.
-    - Using installations also enables you to do partial registration updates. The partial update of an installation is requested with a PATCH method using the JSON-Patch standard.
-
-    **Registration management from a backend**:
-
-    When managing device registration from client apps, the backend is only responsible for sending notifications. Client apps keep PNS handles up-to-date, and register tags. The following picture illustrates this pattern.
-
-    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-backend.png)
-
-    1. The device first retrieves the PNS handle from the PNS.
-    2. Then it registers the handle with the notification hub directly.
-    3. After the registration is successful, the app backend can send a notification targeting that registration.
-
-    In this case, we use only **Listen** rights to access your notification hubs from the device.
-
-    Registering from the device is the simplest method, but it has some drawbacks:
-    - A client app can only update its tags when the app is active. More generally, when tags are affected by multiple devices, managing tags from the backend is a desirable option.
-    - Since apps can be hacked, securing the registration to specific tags requires extra care.
-
-    **Registration management from the device**:
-
-    Managing registrations from the backend requires writing additional code. The app from the device must provide the updated PNS handle to the backend every time the app starts (along with tags and templates), and the backend must update this handle on the notification hub. The following picture illustrates this design.
-
-    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-device.png)
-
-    The advantages of managing registrations from the backend include the ability to modify tags to registrations even when the corresponding app on the device is inactive, and to authenticate the client app before adding a tag to its registration.
-
-4. Security
-
-   When creating a hub, two rules are automatically created: one with Listen rights (that the client app uses) and one with all rights (that the app backend uses):
-
-    - **DefaultListenSharedAccessSignature**: grants **Listen** permission only.
-    - **DefaultFullSharedAccessSignature**: grants **Listen**, **Manage**, and **Send** permissions. This policy is to be used only in your app backend. Do not use it in client applications; use a policy with only **Listen** access.
-
-5. [.Net Library For Notification Hubs](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/notification-hubs?view=azure-dotnet)
-
-   ``NotificationHubClient`` is an instance to interact with Notification Hubs. 
 
 ## Additional Tips and Resources
 
