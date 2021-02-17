@@ -20,7 +20,7 @@
   - [Implement solutions that use Azure Event Hub](#implement-solutions-that-use-azure-event-hub)
   - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
   - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
-- [Implement solutions that use Azure Notification Hubs](#implement-solutions-that-use-azure-notification-hubs)
+  - [Implement solutions that use Azure Notification Hubs](#implement-solutions-that-use-azure-notification-hubs)
 - [Additional Tips and Resources](#additional-tips-and-resources)
 
 ## Develop Azure compute solution (25-30%)
@@ -1388,7 +1388,7 @@ TODO
 
 4. [Modern .NET library for Azure Service Bus](https://github.com/Azure/azure-sdk-for-net/blob/master/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md).
 
-## Implement solutions that use Azure Notification Hubs
+### Implement solutions that use Azure Notification Hubs
 
 ***
 
@@ -1419,7 +1419,7 @@ TODO
     - Using installations also enables you to do partial registration updates. The partial update of an installation is requested with a PATCH method using the JSON-Patch standard.
 
     **Registration management from a backend**:
-    
+
     When managing device registration from client apps, the backend is only responsible for sending notifications. Client apps keep PNS handles up-to-date, and register tags. The following picture illustrates this pattern.
 
     ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-backend.png)
