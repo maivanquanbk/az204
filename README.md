@@ -17,6 +17,7 @@
 - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
 - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
   - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
+  - [Implement solutions that use Azure Event Hub](#implement-solutions-that-use-azure-event-hub)
   - [Implement solutions that use Azure Queue](#implement-solutions-that-use-azure-queue)
   - [Implement solutions that use Azure Service Bus](#implement-solutions-that-use-azure-service-bus)
 - [Additional Tips and Resources](#additional-tips-and-resources)
@@ -916,6 +917,73 @@ TODO
         }
     }
     ```
+
+### Implement solutions that use Azure Event Hub
+
+***
+
+1. Features and terminology
+
+    **Namespace**: A management instance for one of multiple Event Hub instances (or topics). It provides DNS integrated network endpoint, a range of access control and network integration management feature like **IP filtering**, **virtual network service endpoint**, and **Private Link**.
+
+    **Event publishers**:
+    - An entity sends events to an Event Hub is an event publisher (or event producer).
+    - Event publisher can send events using HTTPS, AMQP 1.0, or Kafka protocol.
+    - Event publisher uses Azure AD based-authorization with OAuth2-issued JTW tokens or an Event Hub-specific Shared Access Signature (SAS) token.
+
+    **Publishing an event**:
+    - AMQP has significantly higher performance for frequent publishers and can achieve much lower latencies when used with asynchronous publishing code.
+    - We can publish events individually or batched. A single publication has a limit of **1 MB**, regardless of whether it is a single event or a batch. Publishing events larger than this threshold will be rejected.
+    - Event Hubs throughput is scaled by using partitions and throughput-unit allocations.
+
+    **Event Retention**:
+    - The default value and shortest possible retention period is **1 day (24 hours)**.
+    - With **Standard** tier, maximum retention period is **7 days**.
+    - For **Dedicated** tier, the maximum retention period is **90 days**.
+
+    **Publisher policy**: Enables granular control over event publishers through publisher policies. With that each publisher uses its own unique identifier when publishing events to an Event Hub. Developer can ``Revoke-Access`` to particular publisher and again `Restore-Access` to that publisher using **Management APIs**.
+
+    **Capture**: Event Hubs Capture enables us to automatically capture the streaming data in Event Hubs and save it to your choice of either a Blob storage account, or an Azure Data Lake Service account. Captured data is written in the **Apache Avro** format.
+
+    **Event consumers**: An entity which reads events from an Event Hub is an event consumer. The consumers connect via AMQP 1.0 and events are delivered through the session as they become available. **The consumers do not need to pull for data availability**.
+
+    **Consumer groups**:
+    - The publish/subscribe mechanism of Event Hubs is enabled through **Consumer groups**.
+    - A consumer group is a **view** (state, position or offset) of an entire Event Hub. Consumer groups enable multiple consuming applications to each have a separate view of the event stream, and to read the stream independently at their own pace and with their own offsets.
+    - In a stream processing architecture, each downstream application equates to a consumer group.
+    - For a Standard, maximum number of consumer groups are **20**.
+    - There can be at most **5 concurrent readers** on a partition per consumer group; however **it is recommended that there is only one active reader on a partition per consumer group**. Otherwise, we must to deal with duplication events.
+    - The following figure shows the Event Hubs stream processing architecture:
+
+        ![image](https://docs.microsoft.com/en-us/azure/event-hubs/media/event-hubs-about/event_hubs_architecture.svg)
+
+    **Checkpointing**:
+    - Checkpointing is a process by which readers mark or commit their position within a partition event sequence.
+    - Checkpointing is the responsibility of the consumer and occurs on a per-partition basis within a consumer group.
+    - If a reader disconnects from a partition, when it reconnects it begins reading at the checkpoint that was previously submitted by the last reader of that partition in that consumer group. When the reader connects, it passes the offset to the event hub to specify the location at which to start reading.
+
+2. Scaling with Event Hubs
+
+    There are two factors which influence scaling with Event Hubs.
+    - Throughput units
+    - Partitions
+
+    **Throughput units**:
+    - The throughput capacity of Event Hubs is controlled by throughput units. Throughput units are pre-purchased units of capacity. Capacity of  single throughput:  
+        - **Ingress**: Up to **1 MB** per second or **1000 events** per second (whichever comes first).
+        - **Egress**: Up to **2 MB** per second or **4096 events** per second.
+    - Beyond the capacity of the purchased throughput units, ingress is throttled and a ``ServerBusyException`` is returned.
+    - Up to **20 throughput units** can be purchased for an Event Hubs namespace and are shared across all event hubs in that namespace.
+    - The [Auto-inflate](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-auto-inflate) feature of Event Hubs automatically scales up by increasing the number of throughput units, to meet usage needs. The Event Hubs service increases the throughput when load increases beyond the minimum threshold, without any requests failing with ServerBusy errors.
+
+    **Partitions**:
+    - The number of partitions is specified at creation and must be between **1 and 32** in Event Hubs Standard.
+    - The partition count can be up to **2000 partitions** per Throughput Unit in Event Hubs Dedicated.
+    - Applications control the mapping of events to partitions in one of three ways:
+        - By specifying partition key, which is consistently mapped (using a hash function) to one of the available partitions.
+        - By not specifying a partition key, which enables to broker to randomly choose a partition for a given event.
+        - By explicitly sending events to a specific partition.
+    - Specifying a partition key enables keeping related events together in the same partition and in the exact order in which they were sent.
 
 ### Implement solutions that use Azure Queue
 
