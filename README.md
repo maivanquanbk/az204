@@ -17,6 +17,7 @@
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
+    - [Develop an App Service Logic App](#develop-an-app-service-logic-app)
     - [Implement API management](#implement-api-management)
     - [Develop event-based solutions](#develop-event-based-solutions)
       - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
@@ -676,7 +677,63 @@ TODO
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
+### Develop an App Service Logic App
+
+***
+
+1. Concepts and terminology
+
+    **Logic App**: is a cloud **serverless** service that helps you schedule, automate, and orchestrate tasks, business processes, and workflows when you need to integrate apps, data, systems, and services across enterprises or organizations.
+
+    **Triggers**: Every logic app workflow starts with a trigger, which fires when a specific event happens, or when new available data meets specific criteria. A logic app could contain more than one trigger (maximum is 10).
+
+    **Actions**: Each time that the trigger fires, the Logic Apps engine creates a logic app instance that runs the actions in the workflow. These actions can also include data conversions and workflow controls, such as conditional statements, switch statements, loops, and branching.
+
+    **Connectors**: Connectors provide quick access from Azure Logic Apps to events, data, and actions across other apps, services, systems, protocols, and platforms.
+
+2. Integration Service Environment (ISE)
+
+    To access secured resources, such as virtual machines (VMs) and other systems or services, that are inside or connected to an Azure virtual network, we will need to create an **Integration Service Environment (ISE)**.
+
+    **Why use an ISE?**
+    - Running logic apps in your own separate dedicated instance helps reduce the impact that other Azure tenants might have on your apps' performance, also known as the "noisy neighbors" effect.
+    - Direct access to resources that are inside or connected to your virtual network.
+    - Your own static IP addresses, which are separate from the static IP addresses that are shared by the logic apps in the multi-tenant service. 
+    - Increased limits on run duration, storage retention, throughput, HTTP request and response timeouts, message sizes, and custom connector requests.
+
+    **Dedicated versus multi-tenant**:
+
+    - Built-in triggers and actions, such as HTTP, display the **CORE** label and run in the same ISE as your logic app.
+    - Managed connectors that display the **ISE** label are specially designed for ISEs and always run in the same ISE as your logic app.
+    - If an ISE connector is available for an on-premises system or data source, you can connect directly without using [the on-premises data gateway](https://docs.microsoft.com/en-us/azure/logic-apps/logic-apps-gateway-connection).
+    - Managed connectors that don't display the **ISE** label continue to work for logic apps inside an ISE. These connectors always run in the multi-tenant Logic Apps service, not in the ISE.
+
+    ![image](https://docs.microsoft.com/en-us/azure/logic-apps/media/connect-virtual-network-vnet-isolated-environment-overview/labeled-trigger-actions-integration-service-environment.png)
+
+    **Access to on-premises systems**: Logic apps that run inside an ISE can directly access on-premises systems and data sources that are inside or connected to an Azure virtual network.
+
+    > Note:  if you need to access SQL Server from an ISE and use Windows authentication, you must use the connector's non-ISE version and the on-premises data gateway. The connector's ISE version doesn't support Windows authentication. For more information
+
+    **On-premise data gateway**:
+
+    ![image](https://docs.microsoft.com/en-us/azure/logic-apps/media/logic-apps-gateway-install/how-on-premises-data-gateway-works-flow-diagram.png)
+
+3. B2B enterprise integration solutions with Azure Logic Apps and Enterprise Integration Pack (EIP)
+
+    **Integration account**:
+    - A separate Azure resource that provides a secure, scalable, and manageable container for the integration artifacts that we define and use with logic app workflows.
+    - We can create, store, and manage B2B artifacts, such as trading partners, agreements, maps, schemas, certificates, and batch configurations.
+
+    **Why use the Enterprise Integration Pack?**
+    - With the EIP, we can store all our artifacts in one place - the integration account.
+    - We can build B2B workflows and integrate with third-party software-as-service (SaaS) apps, on-premises apps, and custom apps by using Azure Logic Apps and connectors.
+    - We can create custom code for our logic apps with Azure functions.
+
+    **High-level steps to get started building B2B logic apps**:
+    ![image](https://docs.microsoft.com/en-us/azure/logic-apps/media/logic-apps-enterprise-integration-overview/overview.png)
 ### Implement API management
+
+***
 
 1. Concepts and terminology
 
