@@ -727,6 +727,12 @@ TODO
 
    > Except Developer tier, **Virtual Network (VNet) support**, **Multi-region deployment**, **Multiple custom domain names** and **Self-hosted gateway** are only available at **Premium** tier.
 
+3. Deploy API Management in an internal VNnet while exposing sufficient capacities for external developers
+
+    To expose subset of of APIs and developer portal of the internal **API Management** to the Internet, we will need the [Azure Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/overview) acts as reverse-proxy in front of the **API Management**.
+
+    ![image](https://docs.microsoft.com/en-us/azure/api-management/media/api-management-howto-integrate-internal-vnet-appgateway/api-management-howto-integrate-internal-vnet-appgateway.png)
+
 ***
 
 ### Develop event-based solutions
