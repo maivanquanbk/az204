@@ -17,6 +17,7 @@
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
+    - [Implement API management](#implement-api-management)
     - [Develop event-based solutions](#develop-event-based-solutions)
       - [Implement solutions that use Azure Event Grid](#implement-solutions-that-use-azure-event-grid)
       - [Implement solutions that use Azure Event Hub](#implement-solutions-that-use-azure-event-hub)
@@ -674,6 +675,59 @@ TODO
 TODO
 
 ## Connect to and consume Azure services and third-party services (25-30%)
+
+### Implement API management
+
+1. Concepts and terminology
+
+    **Azure API Management**:  is a way to create consistent and modern API gateways (front-door or facade) for existing back-end services. As a full-lifecycle API management solution, it also provides additional capabilities including a self-service developer portal for API discovery, API lifecycle management, and API analytics.
+
+    ![image](images/API%20Management.png)
+
+    **APIs and operations**:
+    - Each API contains a reference to the back-end service that implements the API, and its operations map to the operations implemented by the back-end service.
+    - Operations in API Management are highly configurable, with control over URL mapping, query and path parameters, request and response content, and operation response caching. Rate limit, quotas, and IP restriction policies can also be implemented at the API or individual operation level.
+
+    **Products**: Products are how APIs are surfaced to developers. Products in API Management have one or more APIs, and are configured with a title, description, and terms of use. Products can be **Open** or **Protected**. Protected products must be subscribed to before they can be used, while open products can be used without a subscription.
+
+    **Groups**: Groups are used to manage the visibility of products to developers. API Management has the following immutable system groups:
+    - **Administrators**: Administrators manage API Management service instances, creating the APIs, operations, and products that are used by developers.
+    - **Developers**:  Authenticated developer portal users. Developers are the customers that build applications using your APIs. Developers are granted access to the developer portal and build applications that call the operations of an API.
+    - **Guests**: Unauthenticated developer portal users. They can be granted certain read-only access, such as the ability to view APIs but not call them.
+
+    **Developers**: Developers represent the user accounts in an API Management service instance. Each developer is a member of one or more groups, and can subscribe to the products that grant visibility to those groups.
+
+    **Developer portal**: Your customers (developers) should use the Developer portal to access your APIs. The Developer portal can be customized.
+
+    **Policies**: Policies are a powerful capability of the system that allow the publisher to change the behavior of the API through configuration. Policies are a collection of Statements that are executed sequentially on the request or response of an API. We can use policies to have rate limiter, IP filtering, and transformation capacity, etc.
+
+    ``` xml
+    <policies>
+    <inbound>
+        <!-- statements to be applied to the request go here -->
+    </inbound>
+    <backend>
+        <!-- statements to be applied before the request is forwarded to 
+            the backend service go here -->
+    </backend>
+    <outbound>
+        <!-- statements to be applied to the response go here -->
+    </outbound>
+    <on-error>
+        <!-- statements to be applied if there is an error condition go here -->
+    </on-error>
+    </policies>
+    ```
+
+    **API Version and Revision**:
+    - **Revision**: allow you to make changes to your APIs in a controlled and safe way. When you want to make changes, create a new revision. You can then edit and test API without disturbing your API consumers. When you are ready, you can then make your revision current.
+    - **Versions**: allow you to present groups of related APIs to your developers. Versions differentiate themselves through a version number (which is a string of any value you choose), and a versioning scheme (path, query string or header).
+
+2. [Pricing tier capacity](https://docs.microsoft.com/en-us/azure/api-management/api-management-features)
+
+   > Except Developer tier, **Virtual Network (VNet) support**, **Multi-region deployment**, **Multiple custom domain names** and **Self-hosted gateway** are only available at **Premium** tier.
+
+***
 
 ### Develop event-based solutions
 
