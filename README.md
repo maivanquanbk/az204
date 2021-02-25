@@ -15,6 +15,7 @@
     - [Develop solutions that use Cosmos DB storage](#develop-solutions-that-use-cosmos-db-storage)
     - [Develop solutions that use blob storage](#develop-solutions-that-use-blob-storage)
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
+    - [Azure role system](#azure-role-system)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
     - [Azure Content Deliver Network (CDN)](#azure-content-deliver-network-cdn)
     - [Azure Cache for Redis](#azure-cache-for-redis)
@@ -671,8 +672,37 @@ Resource Manager templates are JSON files that define the resources you need to 
 
 ## Implement Azure Security (15-20%)
 
-TODO
+### Azure role system
 
+***
+
+   The following diagram is a high-level view of how the classic subscription administrator roles, Azure roles, and Azure AD roles are related.
+
+   ![iamge](https://docs.microsoft.com/en-us/azure/role-based-access-control/media/rbac-and-directory-admin-roles/rbac-admin-roles.png)
+
+   **Classic subscription administrator roles**: Account Administrator, Service Administrator, and Co-Administrator are the three classic subscription administrator roles in Azure. Classic subscription administrators have full access to the Azure subscription. The following table describes the differences between these three classic subscription administrative roles.
+
+   | Classic subscription administrator | Limit | Note |
+   | --- | --- | --- | --- |
+   | Account Administrator | 1 per Azure account | Manage all subscriptions in an account. Change the Service Administrator |
+   | Service Administrator | 1 per Azure subscription | By default, for a new subscription, the Account Administrator is also the Service Administrator. The Service Administrator has equivalent access of a user who is assigned Owner role at the subscription code. The Service Administrator has full access to the Azure portal. |
+   | Co-Administrator | 200 per subscription | The Co-Administrator has the equivalent access of a user who is assigned the Owner role at the subscription scope. |
+
+   **Azure roles**: Azure RBAC is an authorization system built on Azure Resource Manager that provides fine-grained access management to Azure resources, such as compute and storage.
+
+   **Azure AD roles**: Azure AD roles are used to manage Azure AD resources in a directory such as create or edit users, assign administrative roles to others, reset user passwords, manage user licenses, and manage domains.
+
+   **Differences between Azure roles and Azure AD roles**: At a high level, Azure roles control permissions to manage Azure resources, while Azure AD roles control permissions to manage Azure Active Directory resources.
+
+   | Azure roles | Azure AD roles |
+   | --- | --- |
+   | Manage access to Azure resource | Manage access to Azure Active Directory resources |
+   | Support custom roles | Support custom roles |
+   | Scope can be specified at multiple levels (management group, resource group, resource) | Scope is at tenant level |
+
+  > Global Administrator (an Azure AD role) can elevate their access by choosing the **Access management for Azure resources** switch in the Azure portal, the Global Administrator will be granted the User Access Administrator role (an Azure role) on all subscriptions for a particular tenant.
+
+***
 ## Monitor, troubleshoot, and optimize Azure solutions (10-15%)
 
 ### Azure Content Deliver Network (CDN)
@@ -732,7 +762,6 @@ TODO
 
     > Normally, a Redis client communicates with the primary node in a Redis cache for all read and write requests. Certain Redis clients can be configured to read from the replica node.
 
-   
     **Standard replication**: An Azure Cache for Redis in the Standard or Premium tier runs on a pair of Redis servers by default.
 
     ![image](https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/media/cache-high-availability/replication.png)
@@ -741,6 +770,9 @@ TODO
 
     ![image](https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/media/cache-high-availability/zone-redundancy.png)
 
+3. Application Insights
+    - **PerformanceCounters** is only supported in Windows systems.
+    - The recommended way to get system counters in Linux (and other non-Windows environments) is by using [**EventCounters**](https://docs.microsoft.com/en-us/azure/azure-monitor/app/eventcounters).
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
