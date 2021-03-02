@@ -14,8 +14,10 @@
   - [Develop Azure Storage (10-15%)](#develop-azure-storage-10-15)
     - [Develop solutions that use Cosmos DB storage](#develop-solutions-that-use-cosmos-db-storage)
     - [Develop solutions that use blob storage](#develop-solutions-that-use-blob-storage)
+    - [Work with Azure Database Migration Service](#work-with-azure-database-migration-service)
   - [Implement Azure Security (15-20%)](#implement-azure-security-15-20)
     - [Azure role system](#azure-role-system)
+    - [Azure Active Directory](#azure-active-directory)
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
     - [Azure Content Deliver Network (CDN)](#azure-content-deliver-network-cdn)
     - [Azure Cache for Redis](#azure-cache-for-redis)
@@ -362,6 +364,11 @@ Resource Manager templates are JSON files that define the resources you need to 
 - You can't mix Windows and Linux apps in the same App Service plan.
 - Within the same resource group, you can't mix Windows and Linux apps in the same region.
 
+[**App Service Environment**](https://docs.microsoft.com/en-us/azure/app-service/environment/intro): We can create an App Service Environment while creating an App Service plan by setting pricing tier to **Isolation**.
+
+[**Continuous deployment to Azure App Service**](https://docs.microsoft.com/en-us/azure/app-service/deploy-continuous-deployment): To customize your deployment, include a .deployment file in the repository root. For more information, see [Customize deployments](https://github.com/projectkudu/kudu/wiki/Customizing-deployments) and [Custom deployment script](https://github.com/projectkudu/kudu/wiki/Custom-Deployment-Script).
+
+
 **Work with Azure App Service**:
 
 1. Create a web app with Azure CLI
@@ -413,9 +420,22 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     To enable application log on Windows:
     - We can use either **File System** or **Blob Storage** option to store logs.
-    - However, **File System** is for temporary debugging purposes, and turns itself off in 12 hours.
+    - However, **File System** is for temporary debugging purposes, and turns itself off in **12 hours**.
     - The **Blob** option is for long-term logging. But we can only use storage accounts in the same region as the App Service.
     - We can set also the **Retention Period (Days)** for the logs.
+
+    Enable application logs:
+
+    ``` bash
+    az webapp log config --name <appname> --resource-group <myResourceGroup> --application-logging azureblobstorage
+    ```
+
+    Enable logs from Docker container:
+
+    ``` bash
+    az webapp log config --name <appname> --resource-group <myResourceGroup> --docker-container-logging filesystem
+    ```
+
 
     Stream logs:
 
@@ -441,8 +461,15 @@ Resource Manager templates are JSON files that define the resources you need to 
 
 1. Triggers and bindings concepts
 
-    - **Trigger** defines how a function is invoked and a function must have exactly one trigger. Triggers have assciated data, which is often provided as the payload for the function.
+    - **Trigger** defines how a function is invoked and a function must have exactly one trigger. Triggers have associated data, which is often provided as the payload for the function.
+
     - **Binding** to a function is a way of declaratively connecting another resource to the function. Bindings may be connected as *output binding*, *input binding*, or both. Data from bindings is provided to the function as parameters. Bindings are optional, a function might have one, or multiple bindings.
+
+    - [**Binding expression patterns**](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-expressions-patterns)
+
+    - [**Binding return value**](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-return-value?tabs=csharp)
+
+    - [**Handel binding errors**](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-errors?tabs=javascript)
 
 2. Handle Azure Functions binding errors
 
@@ -567,9 +594,11 @@ Resource Manager templates are JSON files that define the resources you need to 
     **Choosing a partition key**: Selecting a partition key in a container is a simple but important design decision. Once we select the partition key, it cannot be changed later. If we must to change it, we will have to move all the data to a new container with the new desire partition key. For all container, a partition key should:
 
     - Be a property that has value which does not change. If a property is set as partition key, we cannot update its value.
-    - The property should have a wide range of possible values.
+    - The property should have a wide range of possible values. If we don't have one available, consider using [Synthetic partition key](https://docs.microsoft.com/en-us/azure/cosmos-db/synthetic-partition-keys).
     - Appear frequently in the predicate clause of queries.
     - Spread request unit (RU) consumption and data storage evenly across all logical partitions.
+
+
 
 3. Set the appropriate consistency level for operations
 
@@ -599,7 +628,11 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     **Trigger**: is a piece of application logic that can be executed before (pre-triggers) and after (post-triggers) creation, deletion, and replacement of a document. Triggers are written in JavaScript.
 
-    **Change feed**: we can use it for sort of de-normalization and duplicating data to a different container with different partition key for optimizing query. 
+    **Change feed**: we can use it for sort of de-normalization and duplicating data to a different container with different partition key for optimizing query.
+
+5. [Quickstart: Build a .NET console app to manage Azure Cosmos DB SQL API resources](https://docs.microsoft.com/en-us/azure/cosmos-db/create-sql-api-dotnet)
+
+6. [How to write stored procedures, triggers, and user-defined functions in Azure Cosmos DB](https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-write-stored-procedures-triggers-udfs#triggers)
 
 ### Develop solutions that use blob storage
 
@@ -670,6 +703,16 @@ Resource Manager templates are JSON files that define the resources you need to 
         - Standard priority: The rehydration request will be processed in the order it was received and may take up to 15 hours.
         - High priority: The rehydration request will be prioritized over Standard requests and may finish in under 1 hour for objects under ten GB in size.
 
+4. Snapshot and sof delete
+
+    **Soft delete**: When enabled, soft delete enables us to save and restore when blobs and blob snapshots are deleted. When soft delete is on and we overwrite a blob, a soft deleted snapshot will be generated to save the state of overwritten data.
+
+### [Work with Azure Database Migration Service](https://docs.microsoft.com/en-us/azure/dms/dms-overview)
+
+***
+
+Azure Database Migration Service is a fully managed service designed to enable seamless migrations from multiple database sources to Azure data platforms with minimal downtime (online migrations).
+
 ## Implement Azure Security (15-20%)
 
 ### Azure role system
@@ -701,6 +744,16 @@ Resource Manager templates are JSON files that define the resources you need to 
    | Scope can be specified at multiple levels (management group, resource group, resource) | Scope is at tenant level |
 
   > Global Administrator (an Azure AD role) can elevate their access by choosing the **Access management for Azure resources** switch in the Azure portal, the Global Administrator will be granted the User Access Administrator role (an Azure role) on all subscriptions for a particular tenant.
+
+### Azure Active Directory
+
+***
+
+[1. Permissions and consent in the Microsoft identity platform](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent)
+
+[2. Understand OAuth 2.0 and OpenID Connect protocols](https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols)
+
+[3. Azure Active Directory app manifest](https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-app-manifest)
 
 ***
 ## Monitor, troubleshoot, and optimize Azure solutions (10-15%)
@@ -1208,6 +1261,8 @@ Resource Manager templates are JSON files that define the resources you need to 
         - By not specifying a partition key, which enables to broker to randomly choose a partition for a given event.
         - By explicitly sending events to a specific partition.
     - Specifying a partition key enables keeping related events together in the same partition and in the exact order in which they were sent.
+
+    > Partition strategy should based on how and what the data is ingested.
 
 3. Samples for [.NET library for Event Hubs](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/messaging.eventhubs-readme?view=azure-dotnet)
 
