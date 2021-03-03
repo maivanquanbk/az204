@@ -233,7 +233,22 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     - **Azure Container Instances**: offers the fastest and simplest way to run a container in Azure, without having to manage any virtual machines and without having to adopt a higher-level service.
 
-2. Create and publish image locally
+2. [Authenticate with an Azure container registry](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication)
+
+    **Individual login with Azure AD**: When working with the registry directly, such as pushing images and pulling images from development workstations.
+
+    ``` bash
+    az login
+    az acr login --name <acrName>
+    ```
+
+    **Service principal**: your application or service can use it for **headless authentication**
+
+    **Admin account**: Each container registry includes an admin user account, which is disabled by default. You can enable the admin user and manage its credentials in the Azure portal, or by using the Azure CLI or other Azure tools. The admin account has full permissions to the registry. 
+
+    > The admin account is designed for a single user to access the registry, mainly for testing purposes.
+
+3. Create and publish image
 
     Create new image:
 
@@ -385,10 +400,10 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     - Use ZIP or WAR file deployment: We can use use the broswer to upload Zip file (for Windows), or Azure CLI, or REST APIs, Powershell.
 
-    ``` bash
-    # Azure CLI
-    az webapp deployment source config-zip --name <my_web_name> --src <path_to_zip_file>
-    ```
+        ``` bash
+        # Azure CLI
+        az webapp deployment source config-zip --name <my_web_name> --src <path_to_zip_file>
+        ```
 
     - What happens to my app during deployment?
 
@@ -408,7 +423,13 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     - We can run from the package at external URL by set `WEBSITE_RUN_FROM_PACKAGE` to the `External url` instead.
 
-4. Enable diagnostics logging
+4. Enable CORS
+
+    ``` bash
+    az webapp cors add --name <my_web_name> --allowed-origins Origin
+    ```
+
+5. Enable diagnostics logging
 
     Azure provides built-in diagnostics to assist with debugging an App Service App. There are 5 types of built-in logging and tracing.
 
@@ -448,7 +469,7 @@ Resource Manager templates are JSON files that define the resources you need to 
 
     - You can also view **Metrics** for your app. You can view CPU, memory, network, and file system usage, and set up alerts when a counter hits a particular threshold.
 
-5. Move an app to another App Service Plan
+6. Move an app to another App Service Plan
     - We can move an app to another AppService Plan as long as that plan is in the same resource group and the same geographical region with the current plan.
 
     > For more information, Azure deploys each App Service Plan to a deployment unit, called a **webspace**. Each region can have many webspaces, but your app can only move between plans that are created in the same webspace. All plans created with the same resource group and region combination are deployed into the same webspace.
@@ -721,7 +742,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
 
    The following diagram is a high-level view of how the classic subscription administrator roles, Azure roles, and Azure AD roles are related.
 
-   ![iamge](https://docs.microsoft.com/en-us/azure/role-based-access-control/media/rbac-and-directory-admin-roles/rbac-admin-roles.png)
+   ![image](https://docs.microsoft.com/en-us/azure/role-based-access-control/media/rbac-and-directory-admin-roles/rbac-admin-roles.png)
 
    **Classic subscription administrator roles**: Account Administrator, Service Administrator, and Co-Administrator are the three classic subscription administrator roles in Azure. Classic subscription administrators have full access to the Azure subscription. The following table describes the differences between these three classic subscription administrative roles.
 
