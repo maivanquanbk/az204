@@ -21,6 +21,7 @@
   - [Monitor, troubleshoot, and optimize Azure solutions (10-15%)](#monitor-troubleshoot-and-optimize-azure-solutions-10-15)
     - [Azure Content Deliver Network (CDN)](#azure-content-deliver-network-cdn)
     - [Azure Cache for Redis](#azure-cache-for-redis)
+    - [Application Insights](#application-insights)
   - [Connect to and consume Azure services and third-party services (25-30%)](#connect-to-and-consume-azure-services-and-third-party-services-25-30)
     - [Develop an App Service Logic App](#develop-an-app-service-logic-app)
     - [Implement API management](#implement-api-management)
@@ -457,11 +458,10 @@ Resource Manager templates are JSON files that define the resources you need to 
     az webapp log config --name <appname> --resource-group <myResourceGroup> --docker-container-logging filesystem
     ```
 
-
-    Stream logs:
+    Stream Error logs:
 
     ``` bash
-    az webapp log tail --name <appname> --resource-group <myResourceGroup>
+    az webapp log tail --name <appname> --resource-group <myResourceGroup> --filter Error
     ```
 
     Alternatives to app diagnostics:
@@ -475,6 +475,11 @@ Resource Manager templates are JSON files that define the resources you need to 
     > For more information, Azure deploys each App Service Plan to a deployment unit, called a **webspace**. Each region can have many webspaces, but your app can only move between plans that are created in the same webspace. All plans created with the same resource group and region combination are deployed into the same webspace.
 
     > If you're moving an app from a higher-tiered plan to a lower-tiered plan, such as from D1 to F1, the app may lose certain capabilities in the target plan. For example, if your app uses TLS/SSL certificates.
+
+7. [Deployment from Github](https://docs.microsoft.com/en-us/azure/app-service/scripts/cli-deploy-github)
+
+8. [Create an ASP.NET Core app in a Docker container from Docker Hub using Azure CLI
+](https://docs.microsoft.com/en-us/azure/app-service/scripts/cli-linux-docker-aspnetcore)
 
 ### Implement Azure Function
 
@@ -776,7 +781,8 @@ Azure Database Migration Service is a fully managed service designed to enable s
 
 [3. Azure Active Directory app manifest](https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-app-manifest)
 
-***
+[4. Resource forest concepts and features for Azure Active Directory Domain Services](https://docs.microsoft.com/en-us/azure/active-directory-domain-services/concepts-resource-forest)
+
 ## Monitor, troubleshoot, and optimize Azure solutions (10-15%)
 
 ### Azure Content Deliver Network (CDN)
@@ -832,7 +838,13 @@ Azure Database Migration Service is a fully managed service designed to enable s
     | Content cache | Many web pages are generated from templates that use static content such as headers, footers, banners. These static items shouldn't change often. Using an in-memory cache provides quick access to static content compared to backend datastores. |
     | Session store | This pattern is commonly used with shopping carts and other user history data that a web application may want to associate with user cookies |
 
-2. High availability for Azure Cache for Redis
+2. Best practices
+
+   **Memory management**:
+   - **Choose an eviction policy** that works for your application. The default policy for Azure Redis is volatile-lru, which means that only keys that have a TTL value set will be eligible for eviction.
+   - **Set an expiration value on your keys**. An expiration will remove keys proactively instead of waiting until there's memory pressure
+
+3. High availability for Azure Cache for Redis
 
     > Normally, a Redis client communicates with the primary node in a Redis cache for all read and write requests. Certain Redis clients can be configured to read from the replica node.
 
@@ -844,9 +856,15 @@ Azure Database Migration Service is a fully managed service designed to enable s
 
     ![image](https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/media/cache-high-availability/zone-redundancy.png)
 
-3. Application Insights
-    - **PerformanceCounters** is only supported in Windows systems.
-    - The recommended way to get system counters in Linux (and other non-Windows environments) is by using [**EventCounters**](https://docs.microsoft.com/en-us/azure/azure-monitor/app/eventcounters).
+### Application Insights
+
+***
+
+- **PerformanceCounters** is only supported in Windows systems.
+
+- The recommended way to get system counters in Linux (and other non-Windows environments) is by using [**EventCounters**](https://docs.microsoft.com/en-us/azure/azure-monitor/app/eventcounters).
+
+- [Usage analysis with Application Insights](https://docs.microsoft.com/en-us/azure/azure-monitor/app/usage-overview)
 
 ## Connect to and consume Azure services and third-party services (25-30%)
 
@@ -904,6 +922,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
 
     **High-level steps to get started building B2B logic apps**:
     ![image](https://docs.microsoft.com/en-us/azure/logic-apps/media/logic-apps-enterprise-integration-overview/overview.png)
+
 ### Implement API management
 
 ***
@@ -1418,7 +1437,9 @@ Azure Database Migration Service is a fully managed service designed to enable s
     - **DefaultListenSharedAccessSignature**: grants **Listen** permission only.
     - **DefaultFullSharedAccessSignature**: grants **Listen**, **Manage**, and **Send** permissions. This policy is to be used only in your app backend. Do not use it in client applications; use a policy with only **Listen** access.
 
-5. [.Net Library For Notification Hubs](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/notification-hubs?view=azure-dotnet)
+5. [Enterprise push architectural guidance](https://docs.microsoft.com/en-us/azure/notification-hubs/notification-hubs-enterprise-push-notification-architecture)
+
+6. [.Net Library For Notification Hubs](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/notification-hubs?view=azure-dotnet)
 
    ``NotificationHubClient`` is an instance to interact with Notification Hubs.
 
