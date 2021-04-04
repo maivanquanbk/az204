@@ -1412,7 +1412,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
     - The installation model supports a special tag format ``($InstallationId:{INSTALLATION_ID})`` that enables sending a notification directly to the specific device.
     - Using installations also enables you to do partial registration updates. The partial update of an installation is requested with a PATCH method using the JSON-Patch standard.
 
-    **Registration management from a backend**:
+    **Registration management from the device**:
 
     When managing device registration from client apps, the backend is only responsible for sending notifications. Client apps keep PNS handles up-to-date, and register tags. The following picture illustrates this pattern.
 
@@ -1428,7 +1428,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
     - A client app can only update its tags when the app is active. More generally, when tags are affected by multiple devices, managing tags from the backend is a desirable option.
     - Since apps can be hacked, securing the registration to specific tags requires extra care.
 
-    **Registration management from the device**:
+    **Registration management from a backend**:
 
     Managing registrations from the backend requires writing additional code. The app from the device must provide the updated PNS handle to the backend every time the app starts (along with tags and templates), and the backend must update this handle on the notification hub. The following picture illustrates this design.
 
