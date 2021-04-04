@@ -1754,7 +1754,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
     ```
 
     **Duplicate detection**:
-    - The Basic tire does not support **Auto forwarding**.
+    - The Basic tire does not support **Duplicate detection**.
     - Service Bus keeps track of the **MessageId** of all messages sent to a queue or topic during a specified time window.
     - If any new message is sent with MessageId that was logged during the time window, the newly sent message is instantly ignored and dropped. However, **the send operation succeeds**
 
