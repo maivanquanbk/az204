@@ -1416,7 +1416,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
 
     When managing device registration from client apps, the backend is only responsible for sending notifications. Client apps keep PNS handles up-to-date, and register tags. The following picture illustrates this pattern.
 
-    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-backend.png)
+    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-device.png)
 
     1. The device first retrieves the PNS handle from the PNS.
     2. Then it registers the handle with the notification hub directly.
@@ -1430,9 +1430,9 @@ Azure Database Migration Service is a fully managed service designed to enable s
 
     **Registration management from a backend**:
 
-    Managing registrations from the backend requires writing additional code. The app from the device must provide the updated PNS handle to the backend every time the app starts (along with tags and templates), and the backend must update this handle on the notification hub. The following picture illustrates this design.
+    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-backend.png)
 
-    ![image](https://docs.microsoft.com/en-us/azure/notification-hubs/media/notification-hubs-registration-management/notification-hubs-registering-on-device.png)
+    Managing registrations from the backend requires writing additional code. The app from the device must provide the updated PNS handle to the backend every time the app starts (along with tags and templates), and the backend must update this handle on the notification hub. The following picture illustrates this design.
 
     The advantages of managing registrations from the backend include the ability to modify tags to registrations even when the corresponding app on the device is inactive, and to authenticate the client app before adding a tag to its registration.
 
