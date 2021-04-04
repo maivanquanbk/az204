@@ -58,7 +58,7 @@
 
     - It is important to plan before creating resources because it is hard to change latter.
     - If the VNet is to be connected to other VNets or on-premises networks, you must select address ranges that don't overlap.
-    - Best practice to use unrouteable IP address: 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16
+    - The IP addresses are private and can't be accessed from the Internet which is only true when using unrouteable IP address: 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16
     - Azure reserves the first four and the last IP in each subnet for its own use.
     - Security: By default, services outside VNets cannot access services inside VNets. However, services in different subnets of a VNets can talk to each other. We can use NSG to control the traffic flow to and from subnet; and to and from VMs.
     - A VM must have at least one NIC but can have more than one. Each NIC attached to a VM must exist in the same location and subscription of the VM.
@@ -214,13 +214,19 @@ Azure Backup is a backup as a service offering that protects physical or virtual
 
 Azure Backup is native support for Azure Virtual Machines, both Windows, and Linux.
 
+Azure Backup is an automatic process which takes VM snapshots without shuting down the VM.
+
 #### Azure Resource Manager templates
 
 ***
 
-Resource Manager templates are JSON files that define the resources you need to deploy for your solution. ARM template features include **declarative syntax** and **repeatable results**.
+**Resource Manager templates** are JSON files that define the resources you need to deploy for your solution. ARM template features include **declarative syntax** and **repeatable results**.
 
 **Azure VM extensions** are small applications that allow you to configure and automate tasks on Azure VMs after initial deployment. You bundle extensions with a new VM deployment or run them against an existing system.
+
+**Custom Script Extension** downloads and executes scripts on Azure virtual machines. This extension is useful for post deployment configuration, software installation, or any other configuration or management tasks. Scripts can be downloaded from Azure storage or GitHub, or provided to the Azure portal at extension run time. We can use Custom Script Extension for both Window and Linux VM.
+
+**Cloud-init** is a widely used approach to customize a Linux VM as it boots for the first time. You can use cloud-init to install packages and write files, or to configure users and security. As cloud-init runs during the initial boot process, there are no additional steps or required agents to apply your configuration.
 
 #### Create, publish and deploy container images for solutions
 
@@ -752,7 +758,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
    **Classic subscription administrator roles**: Account Administrator, Service Administrator, and Co-Administrator are the three classic subscription administrator roles in Azure. Classic subscription administrators have full access to the Azure subscription. The following table describes the differences between these three classic subscription administrative roles.
 
    | Classic subscription administrator | Limit | Note |
-   | --- | --- | --- | --- |
+   | --- | --- | --- |
    | Account Administrator | 1 per Azure account | Manage all subscriptions in an account. Change the Service Administrator |
    | Service Administrator | 1 per Azure subscription | By default, for a new subscription, the Account Administrator is also the Service Administrator. The Service Administrator has equivalent access of a user who is assigned Owner role at the subscription code. The Service Administrator has full access to the Azure portal. |
    | Co-Administrator | 200 per subscription | The Co-Administrator has the equivalent access of a user who is assigned the Owner role at the subscription scope. |
@@ -1764,7 +1770,7 @@ Azure Database Migration Service is a fully managed service designed to enable s
     - A receiving client is not aware of the partitioning. It receives message from a partitioned entities like the way it works with regular entities.
     - When **Partitioning** is enabled, Service Bus routes the message to a partition based on **Partition Key** if it is specified, however, there are special cases:
       - If **Message Session** is enabled, Service Bus will use **SessionId** as the partition key to ensure the ordering of all messages in the same session. In case the **Partition Key** is also specified, it must be the same as **SessionId**. Otherwise, Service Bus will throw ``InvalidOperationException``.
-      - If **Duplication Detection** is enabled, and the **Partition Key** and **SessionId** are not set, Service Bus use **MessageId** and the partition key.
+      - If **Duplication Detection** is enabled, and the **Partition Key** and **SessionId** are not set, Service Bus use **MessageId** as the partition key.
       - In the absence of the **Partition Key**, Service Bus distributes messages in a round-robin fashion to all the partitions of the partitioned queue or topic.
     - To **Partitioning** can work with other features, we need to adhere to the bellow requirements:
       - All messages of the same session must be handled by a single message broker (i.e. same partition) to ensure the ordering.
