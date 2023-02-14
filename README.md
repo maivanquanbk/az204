@@ -1784,5 +1784,4 @@ Azure Database Migration Service is a fully managed service designed to enable s
 4. [Modern .NET library for Azure Service Bus](https://github.com/Azure/azure-sdk-for-net/blob/master/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md).
 
 ## Additional Tips and Resources
-
-TODO
+Mock test examples: https://www.examtopics.com/exams/microsoft/az-204/view/
